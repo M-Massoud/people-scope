@@ -1,4 +1,5 @@
 import type { PeoplePage, PeopleSnapshot, Person } from "../types";
+import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZES } from "@/config";
 import { fetchPeopleSnapshot } from "./provider";
 import {
   InvalidFiltersError,
@@ -26,9 +27,15 @@ function parseExplorer(params: URLSearchParams) {
   if (!sorts.some((value) => value === sort))
     throw new InvalidFiltersError("Choose a valid person sort order.");
   const page = integer(params.get("page") ?? "1", "page number", 1);
-  const pageSize = integer(params.get("pageSize") ?? "25", "page size", 1);
-  if (![10, 25, 50, 100].includes(pageSize))
-    throw new InvalidFiltersError("Choose 10, 25, 50, or 100 people per page.");
+  const pageSize = integer(
+    params.get("pageSize") ?? String(DEFAULT_TABLE_PAGE_SIZE),
+    "page size",
+    1,
+  );
+  if (!TABLE_PAGE_SIZES.includes(pageSize))
+    throw new InvalidFiltersError(
+      `Choose one of these page sizes: ${TABLE_PAGE_SIZES.join(", ")}.`,
+    );
   return {
     search: rawSearch.trim().toLocaleLowerCase("en"),
     sort: sort as PeopleSort,

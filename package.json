@@ -10,11 +10,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:performance:table": "TABLE_BENCHMARK=1 playwright test e2e/people-table-performance.spec.ts --trace=off"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@tanstack/react-query": "^5.90.0",
+    "@tanstack/react-virtual": "^3.14.12",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.2.6",
     "echarts": "^6.0.0",

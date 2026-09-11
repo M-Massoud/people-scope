@@ -10,3 +10,6 @@ test-results/
 *.log
 .DS_Store
 dashboard-guide.html
+
+# Local benchmark result snapshots
+/docs/performance/**/*.json

@@ -30,7 +30,7 @@ Continent filtering uses `location.country` through the lookup in `src/modules/p
 - `search`: up to 100 characters; case-insensitive name, email, city, state or country match.
 - `sort`: `registered_desc` (default), `registered_asc`, `name_asc`, `name_desc`, `age_asc`, `age_desc`. UUID breaks ties for stable pagination.
 - `page`: positive integer, default 1; oversized pages clamp to the final page.
-- `pageSize`: 10, 25 (default), 50 or 100.
+- `pageSize`: 10, 25 (default), 50, 100, or 5000. The 5,000 option returns up to the full matching sample; filters still apply. The dashboard virtualizes large table pages, while the benchmark can also render the regular table. Shared options and the default are defined in `src/config/tables.ts`, used by the selector and API validation.
 
 Example: `/api/people?country=Canada&ageMin=25&ageMax=34&pageSize=25`.
 

@@ -21,24 +21,23 @@ import {
   FieldLabel,
   Input,
   ScrollArea,
-  ScrollBar,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from "@/components/ui";
 import { LabeledSelect } from "@/components/form-fields";
 import type { Person } from "../types";
-import { usePeoplePage } from "../hooks";
+import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZES } from "@/config";
+import {
+  usePeoplePage,
+  useTableMeasurement,
+  getTableBenchmarkMode,
+} from "../hooks";
 import { PeopleTableSkeleton } from "./people-table-skeleton";
+import { OptimizedPeopleTable } from "./optimized-people-table";
+import { PeopleTable } from "./people-table";
 import { PersonAvatar } from "./person-avatar";
 
 type Update = (patch: Record<string, string | null>, replace?: boolean) => void;
@@ -82,9 +81,21 @@ export function PeopleExplorer({
   params: URLSearchParams;
   update: Update;
 }) {
+  // Normal browsing uses the optimized table. The benchmark can select either.
+  const TableComponent =
+    getTableBenchmarkMode() === "regular" ? PeopleTable : OptimizedPeopleTable;
   const open = params.get("explore") === "1";
   const query = usePeoplePage(params, open);
   const data = query.data;
+  const measurePageSize = useTableMeasurement({
+    enabled: open,
+    pageSize: data?.pageSize,
+    requestedPageSize: Number(
+      params.get("pageSize") ?? DEFAULT_TABLE_PAGE_SIZE,
+    ),
+    ready: query.isSuccess && !query.isFetching && !query.isPlaceholderData,
+    failed: query.isError,
+  });
   const [selected, setSelected] = useState<Person | null>(null);
   const section = useRef<HTMLDivElement>(null);
   const clearSearch = () => {
@@ -207,76 +218,11 @@ export function PeopleExplorer({
                   }}
                 >
                   {data.total > 0 && (
-                    <ScrollArea
-                      data-testid="people-scroll-area"
-                      aria-busy={query.isFetching}
-                      role="region"
-                      aria-label="Scrollable people table"
-                      className="isolate h-[420px] min-w-0 [&>[data-slot=scroll-area-viewport]]:pr-3 [&>[data-slot=scroll-area-viewport]]:pb-3"
-                    >
-                      <Table
-                        data-testid="people-table"
-                        scrollable={false}
-                        className="min-w-[900px]"
-                      >
-                        <TableHeader>
-                          <TableRow>
-                            {[
-                              "Name",
-                              "Email",
-                              "Country / city",
-                              "Gender",
-                              "Age",
-                              "Profile date",
-                            ].map((label) => (
-                              <TableHead
-                                key={label}
-                                className="sticky top-0 z-10 bg-card"
-                              >
-                                {label}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {data.items.map((person) => (
-                            <TableRow key={person.login.uuid}>
-                              <TableCell>
-                                <SheetTrigger
-                                  render={
-                                    <Button
-                                      variant="link"
-                                      className="h-auto justify-start p-0 text-left"
-                                    />
-                                  }
-                                  onClick={() => setSelected(person)}
-                                >
-                                  <PersonAvatar person={person} />
-                                  <span>
-                                    {person.name.first} {person.name.last}
-                                  </span>
-                                </SheetTrigger>
-                              </TableCell>
-                              <TableCell>{person.email}</TableCell>
-                              <TableCell>
-                                <div>{person.location.country}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {person.location.city}
-                                </div>
-                              </TableCell>
-                              <TableCell className="capitalize">
-                                {person.gender}
-                              </TableCell>
-                              <TableCell>{person.dob.age}</TableCell>
-                              <TableCell>
-                                {person.registered.date.slice(0, 10)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
+                    <TableComponent
+                      items={data.items}
+                      busy={query.isFetching}
+                      onSelect={setSelected}
+                    />
                   )}
                   <SheetContent>
                     <SheetHeader>
@@ -376,13 +322,14 @@ export function PeopleExplorer({
                         id="page-size"
                         label="Rows per page"
                         value={String(data.pageSize)}
-                        items={[10, 25, 50, 100].map((n) => ({
+                        items={TABLE_PAGE_SIZES.map((n) => ({
                           value: String(n),
-                          label: String(n),
+                          label: n.toLocaleString("en-US"),
                         }))}
-                        onChange={(pageSize) =>
-                          update({ pageSize, page: null })
-                        }
+                        onChange={(pageSize) => {
+                          measurePageSize(Number(pageSize));
+                          update({ pageSize, page: null });
+                        }}
                       />
                     </div>
                     <div className="flex items-center gap-3">

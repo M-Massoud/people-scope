@@ -186,3 +186,9 @@ The heatmap module now includes `world-panel.tsx`, the dynamically loaded `world
 The people schema retains portrait URLs and the provider’s nullable ID value. `PersonAvatar` composes the shadcn Avatar with an initials fallback. The people table uses thumbnails; the details Sheet uses the larger portrait and displays the provider ID when available. Neither the provider ID nor the image replaces `login.uuid` for keys or sorting.
 
 The explorer owns its scrolling and sticky-header behavior. Its ScrollArea creates a local stacking context (`isolate`), and opaque header cells use `sticky top-0 z-10` to stay above row avatars during scrolling. This is a table layout responsibility, so the shared Avatar needs no table-specific styling. A browser regression checks the actual topmost element where an avatar passes beneath a header, with both portraits and initials at desktop and mobile widths.
+
+### People table rendering
+
+The shared `OptimizedPeopleTable` component owns row rendering and its shadcn ScrollArea viewport. It uses `@tanstack/react-virtual` for pages above 100 records, with fixed-height rows, spacer rows, and six-row overscan. Smaller pages render normally. UUID keys, logical ARIA row indexes, keyboard navigation, and retaining the focused trigger preserve record identity and profile-dialog focus. Fetching, filtering, sorting, and pagination remain in the existing hooks and server service. See [performance measurements](PERFORMANCE.md) for the controlled before/after workload.
+
+`PeopleTable` retains the original full-row rendering as a readable benchmark comparison. Both components share the `items`, `busy`, and `onSelect` prop contract. `PeopleExplorer` defaults to `OptimizedPeopleTable`; only the automated benchmark selects the regular version through its internal mode. The same benchmark measures both implementations with identical data and timing checkpoints.

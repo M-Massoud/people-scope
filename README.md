@@ -104,3 +104,7 @@ npm run test:e2e
 ```
 
 Browser tests start a production server on port 3101. They intercept our API responses using API-shaped fixtures kept under `tests/fixtures`, so the browser suite is independent of upstream availability. Provider unit tests check external validation and caching separately. Production has no fixture mode or automatic fallback.
+
+For the automated 5,000-row comparison of `PeopleTable` and `OptimizedPeopleTable`, see [performance measurements](docs/PERFORMANCE.md). Run `npm run test:performance:table` after a production build. Results appear in the terminal and as JSON files under `test-results/`; no browser setup is needed.
+
+Large people-table pages use TanStack Virtual to render a small window of rows while keeping every requested record available through scrolling. Pages of 100 rows or fewer render in full.

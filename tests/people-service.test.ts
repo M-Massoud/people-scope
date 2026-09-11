@@ -241,6 +241,25 @@ describe("people explorer", () => {
     ).toBe(0);
   });
 
+  it("returns up to 5000 matching records while keeping the default at 25", () => {
+    const large = {
+      ...peopleFixture,
+      people: Array.from({ length: 5000 }, (_, index) => fixturePerson(index)),
+    };
+    expect(buildPeoplePage(large, params("")).items).toHaveLength(25);
+    const all = buildPeoplePage(large, params("pageSize=5000&page=2"));
+    expect(all.items).toHaveLength(5000);
+    expect(all).toMatchObject({ page: 1, pageCount: 1, pageSize: 5000 });
+    const filtered = buildPeoplePage(
+      large,
+      params("pageSize=5000&country=Canada"),
+    );
+    expect(filtered.items).toHaveLength(1000);
+    expect(
+      filtered.items.every((person) => person.location.country === "Canada"),
+    ).toBe(true);
+  });
+
   it("clamps pages and provides enough offline fixture rows for explorer pagination", () => {
     const page = buildPeoplePage(peopleFixture, params("page=999&pageSize=25"));
     expect(page).toMatchObject({
@@ -261,6 +280,7 @@ describe("people explorer", () => {
     "page=-1",
     "page=9007199254740992",
     "pageSize=20",
+    "pageSize=5001",
     "pageSize=",
     "sort=invalid",
     `search=${"a".repeat(101)}`,
