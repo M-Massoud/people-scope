@@ -41,6 +41,11 @@ export function fixturePerson(
     registered: { date: `${year}-${month}-${day}T12:00:00.000Z` },
     phone: `555-010-${String(index + 1).padStart(4, "0")}`,
     nat: place.nat,
+    picture: {
+      large: `https://randomuser.me/api/portraits/${index % 2 ? "men" : "women"}/${index % 99}.jpg`,
+      thumbnail: `https://randomuser.me/api/portraits/thumb/${index % 2 ? "men" : "women"}/${index % 99}.jpg`,
+    },
+    id: { name: "DEMO", value: index % 3 ? `SAMPLE-${index + 1}` : null },
     ...overrides,
   };
 }

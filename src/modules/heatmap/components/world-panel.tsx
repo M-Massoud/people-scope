@@ -1,7 +1,9 @@
 "use client";
 import dynamic from "next/dynamic";
+import { MapPin } from "lucide-react";
 import {
   Button,
+  Badge,
   Card,
   CardContent,
   CardDescription,
@@ -43,6 +45,10 @@ export function WorldPanel({
   onMetric,
 }: Props) {
   const total = rows.reduce((sum, row) => sum + row.total, 0);
+  const leading = rows.reduce<HeatmapRow | undefined>(
+    (largest, row) => (!largest || row.total > largest.total ? row : largest),
+    undefined,
+  );
   return (
     <div
       className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,2.2fr)_minmax(300px,1fr)]"
@@ -72,6 +78,22 @@ export function WorldPanel({
               <ToggleGroupItem value="age">Average age</ToggleGroupItem>
             </ToggleGroup>
           </div>
+          {selected ? (
+            <div className="mt-2">
+              <Badge variant="secondary">
+                <MapPin data-icon="inline-start" />
+                {selected} selected
+              </Badge>
+            </div>
+          ) : leading && total > 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {leading.country} accounts for{" "}
+              <strong className="font-medium text-foreground">
+                {((leading.total / total) * 100).toFixed(1)}%
+              </strong>{" "}
+              of this selection.
+            </p>
+          ) : null}
         </CardHeader>
         <CardContent>
           <WorldChart
@@ -142,6 +164,11 @@ export function WorldPanel({
                       <div className="mt-1 text-xs text-muted-foreground">
                         {((row.total / total) * 100).toFixed(1)}% of selection
                       </div>
+                      <div className="country-share-track" aria-hidden="true">
+                        <span
+                          style={{ width: `${(row.total / total) * 100}%` }}
+                        />
+                      </div>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {row.total.toLocaleString("en-US")}
@@ -154,10 +181,6 @@ export function WorldPanel({
               </TableBody>
             </Table>
           </ScrollArea>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Colors describe the filtered sample. The scale updates with your
-            filters.
-          </p>
         </CardContent>
       </Card>
     </div>

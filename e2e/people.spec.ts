@@ -2,8 +2,12 @@ import { test, expect } from "@playwright/test";
 import { peopleFixture } from "../tests/fixtures/people";
 import { buildPeopleReport } from "@/modules/reports/server";
 import { buildPeoplePage } from "@/modules/people/server";
+import { CHART_COLORS } from "@/components/charts";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("https://randomuser.me/api/portraits/**", (route) =>
+    route.abort(),
+  );
   await page.route("**/api/reports?**", async (route) => {
     try {
       await route.fulfill({
@@ -40,10 +44,10 @@ test("four reports render only API-based people data", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   for (const [path, title] of [
-    ["/", "Registrations"],
-    ["/ages", "Age groups"],
-    ["/demographics", "Demographics"],
-    ["/countries", "Geography"],
+    ["/profile-timeline", "Profile timeline"],
+    ["/age-groups", "Age groups"],
+    ["/age-gender", "Age & gender"],
+    ["/geography", "Geography"],
   ]) {
     await page.goto(path);
     await expect(
@@ -56,6 +60,10 @@ test("four reports render only API-based people data", async ({ page }) => {
       page.getByRole("region", { name: "Report summary" }),
     ).toContainText("60");
     await expect(page.getByTestId("report-table")).toBeVisible();
+    await expect(page.getByRole("main")).not.toContainText("Random User");
+    await expect(
+      page.getByRole("link", { name: "Random User documentation" }),
+    ).toHaveCount(1);
     await expect(
       page.getByRole("combobox", { name: "Campaign", exact: true }),
     ).toHaveCount(0);
@@ -63,10 +71,44 @@ test("four reports render only API-based people data", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("reduced motion disables decorative animation while filters remain interactive", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/profile-timeline");
+  await expect(
+    page.getByTestId("report-chart").locator("canvas"),
+  ).toBeVisible();
+  await expect(page.locator(".summary-card").first()).toHaveCSS(
+    "animation-name",
+    "none",
+  );
+  await expect(page.locator(".page-heading")).toHaveCSS(
+    "animation-name",
+    "none",
+  );
+  await page.getByRole("combobox", { name: "Country", exact: true }).click();
+  await page.getByRole("option", { name: "Canada", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Apply filters", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Report summary" }),
+  ).toContainText("12");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(page.locator(".summary-card").first()).toHaveCSS(
+    "animation-name",
+    "appear",
+  );
+  await expect(
+    page.getByTestId("report-chart").locator("canvas"),
+  ).toBeVisible();
+});
+
 test("country filters preserve the canvas, URL, navigation, refresh and Back", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/profile-timeline");
   const chart = page.getByTestId("report-chart");
   await expect(chart.locator("canvas")).toBeVisible();
   const canvas = await chart.locator("canvas").elementHandle();
@@ -85,7 +127,7 @@ test("country filters preserve the canvas, URL, navigation, refresh and Back", a
     page.getByRole("combobox", { name: "Country", exact: true }),
   ).toContainText("Canada");
   await page.getByRole("link", { name: "Geography", exact: true }).click();
-  await expect(page).toHaveURL(/countries\?.*country=Canada/);
+  await expect(page).toHaveURL(/geography\?.*country=Canada/);
   await expect(page.getByTestId("report-table")).toContainText("100.0%");
   await page.getByRole("button", { name: "Remove country filter" }).click();
   await expect(page).not.toHaveURL(/country=Canada/);
@@ -98,7 +140,7 @@ test("country filters preserve the canvas, URL, navigation, refresh and Back", a
 test("age inputs validate and presets highlight the selected registration period", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/profile-timeline");
   await expect(
     page.getByRole("button", { name: "All time", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -137,7 +179,7 @@ test("age inputs validate and presets highlight the selected registration period
 test("monthly registration rows drill into their real date boundaries", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/profile-timeline");
   await page.getByRole("button", { name: "Monthly", exact: true }).click();
   await expect(page).toHaveURL(/grouping=month/);
   await expect(
@@ -163,7 +205,7 @@ test("monthly registration rows drill into their real date boundaries", async ({
 test("people explorer searches, sorts, paginates and opens direct API details", async ({
   page,
 }) => {
-  await page.goto("/?explore=1");
+  await page.goto("/profile-timeline?explore=1");
   const table = page.getByTestId("people-table");
   await expect(table.locator("tbody tr")).toHaveCount(25);
   const summary = await page
@@ -180,9 +222,9 @@ test("people explorer searches, sorts, paginates and opens direct API details", 
     table.locator("tbody tr").first().getByRole("button"),
   ).not.toHaveText(firstName);
   const trigger = table.locator("tbody tr").first().getByRole("button");
-  const name = await trigger.innerText();
+  const name = await trigger.locator(":scope > span").last().innerText();
   await trigger.click();
-  await expect(page.getByRole("dialog")).toContainText(name);
+  await expect(page.getByRole("dialog").getByRole("heading")).toHaveText(name);
   await expect(page.getByRole("dialog")).toContainText("Date of birth");
   await expect(page.getByRole("dialog")).not.toContainText("Budget");
   await page.keyboard.press("Escape");
@@ -203,6 +245,30 @@ test("people explorer searches, sorts, paginates and opens direct API details", 
   await expect(
     page.getByText("No matching people", { exact: true }),
   ).toBeVisible();
+  await expect(table).toHaveCount(0);
+  await expect(page.getByTestId("people-scroll-area")).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "Rows per page" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Next", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Clear search", exact: true }),
+  ).toHaveCount(1);
+  expect(
+    (await page.getByTestId("people-empty-state").boundingBox())!.height,
+  ).toBeLessThan(340);
+  await page
+    .locator("#people-explorer")
+    .screenshot({ path: "/tmp/peoplescope-empty-desktop.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page
+    .locator("#people-explorer")
+    .screenshot({ path: "/tmp/peoplescope-empty-mobile.png" });
   await expect(page.getByRole("region", { name: "Report summary" })).toHaveText(
     summary,
     { useInnerText: true },
@@ -212,12 +278,62 @@ test("people explorer searches, sorts, paginates and opens direct API details", 
     .first()
     .click();
   await expect(table.locator("tbody tr")).toHaveCount(25);
+  await expect(
+    page.getByRole("searchbox", { name: "Search people" }),
+  ).toBeFocused();
+  await expect(page).not.toHaveURL(/search=/);
+});
+
+test("people loading keeps the table height and resolves to records", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/people?**", async (route) => {
+    await gate;
+    await route.fulfill({
+      json: buildPeoplePage(
+        peopleFixture,
+        new URL(route.request().url()).searchParams,
+      ),
+    });
+  });
+  await page.goto("/profile-timeline?explore=1");
+  const loading = page.getByRole("status", {
+    name: "Loading people",
+    exact: true,
+  });
+  await expect(loading).toBeVisible();
+  await expect(page.getByTestId("people-table")).toHaveCount(0);
+  const height = (await loading
+    .locator('[data-slot="scroll-area"]')
+    .boundingBox())!.height;
+  await page
+    .locator("#people-explorer")
+    .screenshot({ path: "/tmp/peoplescope-table-loading-desktop.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page
+    .locator("#people-explorer")
+    .screenshot({ path: "/tmp/peoplescope-table-loading-mobile.png" });
+  release();
+  await expect(
+    page.getByTestId("people-table").locator("tbody tr"),
+  ).toHaveCount(25);
+  await expect(loading).toHaveCount(0);
+  expect(
+    (await page.getByTestId("people-scroll-area").boundingBox())!.height,
+  ).toBe(height);
 });
 
 test("country and demographic table actions drill into matching records", async ({
   page,
 }) => {
-  await page.goto("/countries");
+  await page.goto("/geography");
   await page.getByRole("button", { name: "Countries", exact: true }).click();
   await page
     .getByRole("button", { name: "View people in Canada", exact: true })
@@ -226,7 +342,7 @@ test("country and demographic table actions drill into matching records", async 
   await expect(
     page.getByTestId("people-table").locator("tbody tr"),
   ).toHaveCount(12);
-  await page.goto("/demographics?ageMin=20&ageMax=30");
+  await page.goto("/age-gender?ageMin=20&ageMax=30");
   await page.getByRole("button", { name: /View male ages 18/ }).click();
   await expect(page).toHaveURL(
     (url) =>
@@ -242,27 +358,37 @@ test("country and demographic table actions drill into matching records", async 
 test("clicking an actual grouped bar applies its gender and age cohort", async ({
   page,
 }) => {
-  await page.goto("/demographics");
+  await page.goto("/age-gender");
   const canvas = page.getByTestId("report-chart").locator("canvas");
   await expect(canvas).toBeVisible();
-  // Pick a painted green bar below the legend, accounting for device pixel ratio.
-  const point = await canvas.evaluate((element: HTMLCanvasElement) => {
-    const context = element.getContext("2d")!;
-    const y = Math.floor(element.height * 0.7);
-    const pixels = context.getImageData(0, y, element.width, 1).data;
-    for (let x = 0; x < element.width; x++)
-      if (
-        pixels[x * 4] === 117 &&
-        pixels[x * 4 + 1] === 145 &&
-        pixels[x * 4 + 2] === 125
-      )
-        return {
-          x: ((x + 2) * element.clientWidth) / element.width,
-          y: (y * element.clientHeight) / element.height,
-        };
-    throw Error("No female bar was painted");
-  });
-  await canvas.click({ position: point });
+  // Wait for the animated bar to reach the click position and use its palette color.
+  const rgb = CHART_COLORS[1]
+    .slice(1)
+    .match(/.{2}/g)!
+    .map((part) => parseInt(part, 16));
+  let point: { x: number; y: number } | null = null;
+  await expect
+    .poll(async () => {
+      point = await canvas.evaluate((element: HTMLCanvasElement, rgb) => {
+        const context = element.getContext("2d")!;
+        const y = Math.floor(element.height * 0.7);
+        const pixels = context.getImageData(0, y, element.width, 1).data;
+        for (let x = 0; x < element.width; x++)
+          if (
+            pixels[x * 4] === rgb[0] &&
+            pixels[x * 4 + 1] === rgb[1] &&
+            pixels[x * 4 + 2] === rgb[2]
+          )
+            return {
+              x: ((x + 2) * element.clientWidth) / element.width,
+              y: (y * element.clientHeight) / element.height,
+            };
+        return null;
+      }, rgb);
+      return point;
+    })
+    .not.toBeNull();
+  await canvas.click({ position: point! });
   await expect(page).toHaveURL(/gender=female/);
   await expect(page).toHaveURL(/explore=1/);
   const rows = page.getByTestId("people-table").locator("tbody tr");
@@ -294,7 +420,7 @@ test("loading skeleton and failed request recovery are visible", async ({
         ),
       });
   });
-  await page.goto("/");
+  await page.goto("/profile-timeline");
   await expect(page.getByTestId("report-skeleton")).toBeVisible();
   release();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
@@ -307,7 +433,7 @@ test("loading skeleton and failed request recovery are visible", async ({
 });
 
 test("empty selections show no invented average or chart", async ({ page }) => {
-  await page.goto("/ages?ageMin=110");
+  await page.goto("/age-groups?ageMin=110");
   await expect(page.getByText("No people for these filters.")).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Report summary" }),
@@ -318,7 +444,7 @@ test("empty selections show no invented average or chart", async ({ page }) => {
 test("calendar uses shadcn year selection and preserves focus and civil dates", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/profile-timeline");
   const trigger = page.getByRole("button", {
     name: "Registered from",
     exact: true,
@@ -337,7 +463,12 @@ test("calendar uses shadcn year selection and preserves focus and civil dates", 
 
 test("all reports and the explorer fit a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ["/", "/ages", "/demographics", "/countries?explore=1"]) {
+  for (const path of [
+    "/profile-timeline",
+    "/age-groups",
+    "/age-gender",
+    "/geography?explore=1",
+  ]) {
     await page.goto(path);
     await expect(
       page.getByTestId("report-chart").locator("canvas"),
@@ -365,7 +496,7 @@ test("all reports and the explorer fit a mobile viewport", async ({ page }) => {
 test("changing country preserves unfinished age edits until Apply", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/profile-timeline");
   await page.getByLabel("Minimum age", { exact: true }).fill("30");
   await page.getByRole("combobox", { name: "Country", exact: true }).click();
   await page.getByRole("option", { name: "Canada", exact: true }).click();
@@ -395,7 +526,7 @@ test("an open explorer does not auto-scroll on page load or navigation", async (
       return original.call(this, options);
     };
   });
-  await page.goto("/?explore=1");
+  await page.goto("/profile-timeline?explore=1");
   await expect(
     page.getByTestId("people-table").locator("tbody tr"),
   ).toHaveCount(25);
@@ -405,7 +536,7 @@ test("an open explorer does not auto-scroll on page load or navigation", async (
     ),
   ).toBe(0);
   await page.getByRole("link", { name: "Age groups", exact: true }).click();
-  await expect(page).toHaveURL(/ages\?explore=1/);
+  await expect(page).toHaveURL(/age-groups\?explore=1/);
   await expect(
     page.getByTestId("people-table").locator("tbody tr"),
   ).toHaveCount(25);
@@ -432,7 +563,7 @@ test("report cards align and shadcn scrollbars stay visible and work in both dir
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/?explore=1");
+  await page.goto("/profile-timeline?explore=1");
   await expect(
     page.getByTestId("report-chart").locator("canvas"),
   ).toBeVisible();
@@ -487,7 +618,7 @@ test("report cards align and shadcn scrollbars stay visible and work in both dir
 test("continent doughnut groups countries and drills into matching profiles", async ({
   page,
 }) => {
-  await page.goto("/countries");
+  await page.goto("/geography");
   await expect(
     page.getByRole("heading", { name: "People by continent", exact: true }),
   ).toBeVisible();
@@ -515,4 +646,108 @@ test("continent doughnut groups countries and drills into matching profiles", as
   await expect(table.locator("tbody tr")).toHaveCount(3);
   await page.getByRole("button", { name: "Remove continent filter" }).click();
   await expect(table.locator("tbody tr")).toHaveCount(5);
+});
+
+test("profile pictures and provider IDs render with missing-data and image-error fallbacks", async ({
+  page,
+}) => {
+  await page.route("https://randomuser.me/api/portraits/**", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#edf3ff"/><circle cx="40" cy="30" r="14" fill="#386ee0"/><path d="M15 80a25 30 0 0 1 50 0" fill="#386ee0"/></svg>',
+    }),
+  );
+  await page.goto(
+    "/profile-timeline?explore=1&search=amelia.martin1%40example.com",
+  );
+  const table = page.getByTestId("people-table");
+  await expect(table.locator("tbody tr")).toHaveCount(1);
+  await expect(table.locator('[data-slot="avatar-image"]')).toBeVisible();
+  await table
+    .getByRole("button", { name: "Amelia Martin", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator('[data-slot="avatar-image"]')).toBeVisible();
+  await expect(dialog).toContainText("Provider ID");
+  await expect(dialog).toContainText("Not provided");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "/tmp/peoplescope-profile-mobile.png",
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(390);
+  await page.keyboard.press("Escape");
+  await page.route("https://randomuser.me/api/portraits/**", (route) =>
+    route.abort(),
+  );
+  await page.goto(
+    "/profile-timeline?explore=1&search=noah.wilson2%40example.com",
+  );
+  await expect(table.locator('[data-slot="avatar-fallback"]')).toHaveText("NW");
+  await table.getByRole("button", { name: "Noah Wilson", exact: true }).click();
+  await expect(dialog).toContainText("DEMO · SAMPLE-2");
+  await expect(dialog.locator('[data-slot="avatar-fallback"]')).toHaveText(
+    "NW",
+  );
+});
+
+test("sticky people headers stay above portraits and initials while scrolling", async ({
+  page,
+}) => {
+  for (const portraits of [true, false]) {
+    await page.route("https://randomuser.me/api/portraits/**", (route) =>
+      portraits
+        ? route.fulfill({
+            contentType: "image/svg+xml",
+            body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="blue"/></svg>',
+          })
+        : route.abort(),
+    );
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto("/geography?explore=1");
+      const table = page.getByTestId("people-table");
+      await table.scrollIntoViewIfNeeded();
+      const avatar = table.locator('[data-slot="avatar"]').first();
+      await expect(
+        avatar.locator(
+          portraits
+            ? '[data-slot="avatar-image"]'
+            : '[data-slot="avatar-fallback"]',
+        ),
+      ).toBeVisible();
+      const viewport = page
+        .getByTestId("people-scroll-area")
+        .locator('[data-slot="scroll-area-viewport"]');
+      await viewport.evaluate((el) => {
+        el.scrollTop = 40;
+      });
+      await expect
+        .poll(() =>
+          table.evaluate((el) => {
+            const head = el.querySelector("th")!;
+            const portrait = el.querySelector('[data-slot="avatar"]')!;
+            const h = head.getBoundingClientRect();
+            const p = portrait.getBoundingClientRect();
+            const top = Math.max(h.top, p.top);
+            const bottom = Math.min(h.bottom, p.bottom);
+            if (bottom <= top) return "no overlap tested";
+            const hit = document.elementFromPoint(
+              p.left + p.width / 2,
+              (top + bottom) / 2,
+            );
+            return hit?.closest("th") === head
+              ? "header"
+              : hit?.getAttribute("data-slot");
+          }),
+        )
+        .toBe("header");
+      if (portraits)
+        await page
+          .getByTestId("people-scroll-area")
+          .screenshot({ path: `/tmp/people-sticky-header-${width}.png` });
+    }
+  }
 });

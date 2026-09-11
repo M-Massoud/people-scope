@@ -1,13 +1,23 @@
 "use client";
 import { Suspense, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { X, Link as LinkIcon, Check } from "lucide-react";
-import { Shell } from "@/components";
+import {
+  X,
+  Link as LinkIcon,
+  Check,
+  Users,
+  Globe2,
+  CalendarDays,
+  SlidersHorizontal,
+  RotateCw,
+} from "lucide-react";
+import { REPORT_PAGES } from "@/config";
+import { Shell, SummaryCard } from "@/components";
 import { Filters } from "./filters";
 import {
   Alert,
   AlertDescription,
-  Badge,
+  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -33,10 +43,10 @@ import {
 } from "@/modules/people";
 import type { PeopleReportKind } from "../types";
 import {
-  registrationOption,
-  ageOption,
-  demographicOption,
-  countryOption,
+  timelineOption,
+  ageGroupsOption,
+  ageGenderOption,
+  geographyOption,
 } from "../charts";
 import type { ChartSelection } from "@/components/charts";
 
@@ -49,29 +59,25 @@ const EChart = dynamic(() => import("@/components/charts/echart"), {
   ),
 });
 const pages = {
-  registrations: {
-    title: "Registrations",
-    description: "Explore when people in this sample registered.",
-    chart: "Registrations over time",
-    note: "Counted by the registration date supplied by Random User. These dates describe sample profiles, not sign-ups to this application.",
+  "profile-timeline": {
+    ...REPORT_PAGES["profile-timeline"],
+    description: "Explore how profiles are distributed by registration date.",
+    chart: "Profiles by registration date",
   },
-  ages: {
-    title: "Age groups",
+  "age-groups": {
+    ...REPORT_PAGES["age-groups"],
     description: "See how the selected people are distributed by age.",
     chart: "People by age group",
-    note: "Age groups use the API’s supplied age. We do not recalculate age using today’s date.",
   },
-  demographics: {
-    title: "Demographics",
+  "age-gender": {
+    ...REPORT_PAGES["age-gender"],
     description: "Compare the gender breakdown within each age group.",
     chart: "Gender by age group",
-    note: "Both series use the same people-count scale. Gender and age are supplied by the API; no attributes are inferred.",
   },
-  countries: {
-    title: "Geography",
+  geography: {
+    ...REPORT_PAGES["geography"],
     description: "Explore where the people in this sample are located.",
     chart: "People by country",
-    note: "Country comes from each profile’s location. Shares describe this generated sample, not real-world population statistics.",
   },
 };
 export function ReportPage({ kind }: { kind: PeopleReportKind }) {
@@ -93,29 +99,35 @@ export function ReportPage({ kind }: { kind: PeopleReportKind }) {
 function ReportContent({ kind }: { kind: PeopleReportKind }) {
   const { params, query, update, clear } = useReportView();
   const data = query.data;
+  const largestAge = data?.ages.reduce(
+    (largest, age) => (age.total > largest.total ? age : largest),
+    data.ages[0],
+  );
+  const ageDetail = largestAge?.total
+    ? `Largest age band: ${largestAge.label}${data!.ages.filter((age) => age.total === largestAge.total).length > 1 ? " (tied)" : ""}`
+    : "Across the selected profiles";
   const [copiedUrl, setCopiedUrl] = useState("");
   const [copyFailed, setCopyFailed] = useState(false);
   const geography =
     params.get("geography") === "country" ? "country" : "continent";
   const info =
-    kind === "countries" && geography === "continent"
+    kind === "geography" && geography === "continent"
       ? {
-          ...pages.countries,
+          ...pages.geography,
           chart: "People by continent",
-          note: "Continents are grouped from each profile’s country using a geographic lookup. Shares describe this sample, not population statistics.",
         }
       : pages[kind];
   const option = useMemo(
     () =>
       !data
         ? null
-        : kind === "registrations"
-          ? registrationOption(data.timeline)
-          : kind === "ages"
-            ? ageOption(data.ages)
-            : kind === "demographics"
-              ? demographicOption(data.ages)
-              : countryOption(
+        : kind === "profile-timeline"
+          ? timelineOption(data.timeline)
+          : kind === "age-groups"
+            ? ageGroupsOption(data.ages)
+            : kind === "age-gender"
+              ? ageGenderOption(data.ages)
+              : geographyOption(
                   geography === "continent"
                     ? groupByContinent(data.countries)
                     : data.countries,
@@ -158,10 +170,10 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
   };
   const onChartSelect = (selection: ChartSelection) => {
     if (!data) return;
-    if (kind === "registrations") {
+    if (kind === "profile-timeline") {
       const row = data.timeline[selection.dataIndex];
       if (row) drill({ from: row.from, to: row.to });
-    } else if (kind === "countries") {
+    } else if (kind === "geography") {
       const row = (
         geography === "continent"
           ? groupByContinent(data.countries)
@@ -179,7 +191,7 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
         drill({
           ageMin: String(row.min),
           ageMax: String(row.max),
-          ...(kind === "demographics"
+          ...(kind === "age-gender"
             ? { gender: selection.seriesName?.toLowerCase() ?? null }
             : {}),
         });
@@ -224,10 +236,6 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
           <div>
             <h1>{info.title}</h1>
             <p>{info.description}</p>
-          </div>
-          <div className="report-status">
-            <Badge variant="outline">Random User · sample data</Badge>
-            {data && <span>Fetched {data.meta.fetchedAt.slice(0, 10)}</span>}
           </div>
         </div>
         {data && filters && (
@@ -310,48 +318,61 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
           </Alert>
         )}
         {query.isError && (
-          <Alert variant="destructive" className="my-4">
-            <AlertDescription>
-              <p>{query.error.message}</p>
-              <div className="flex gap-2">
+          <Alert className="my-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:p-8">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary">
+              <SlidersHorizontal className="size-5" aria-hidden="true" />
+            </div>
+            <div className="flex min-w-0 flex-col gap-2">
+              <AlertTitle>
+                <h2>We couldn’t load this report</h2>
+              </AlertTitle>
+              <AlertDescription>{query.error.message}</AlertDescription>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Button onClick={clear}>Reset to all data</Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  disabled={query.isFetching}
                   onClick={() => void query.refetch()}
                 >
-                  Try again
-                </Button>
-                <Button variant="ghost" size="sm" onClick={clear}>
-                  Reset to all data
+                  <RotateCw data-icon="inline-start" />
+                  {query.isFetching ? "Retrying…" : "Try again"}
                 </Button>
               </div>
-            </AlertDescription>
+            </div>
           </Alert>
         )}
         {data && option && (
           <>
             <section className="report-summary" aria-label="Report summary">
-              <div>
-                <span>People in this selection</span>
-                <strong>
-                  {data.metrics.totalPeople.toLocaleString("en-US")}
-                </strong>
-              </div>
-              <div>
-                <span>Average age</span>
-                <strong>
-                  {data.metrics.averageAge === null
-                    ? "—"
-                    : data.metrics.averageAge.toFixed(1)}
-                  <small className="ml-2 text-sm font-normal text-muted-foreground">
-                    years
-                  </small>
-                </strong>
-              </div>
-              <div>
-                <span>Countries represented</span>
-                <strong>{data.metrics.countryCount}</strong>
-              </div>
+              <SummaryCard
+                label="People in this selection"
+                value={data.metrics.totalPeople.toLocaleString("en-US")}
+                icon={Users}
+                detail="Profiles matching your filters"
+              />
+              <SummaryCard
+                label="Average age"
+                value={
+                  data.metrics.averageAge === null ? (
+                    "—"
+                  ) : (
+                    <>
+                      {data.metrics.averageAge.toFixed(1)}
+                      <small>years</small>
+                    </>
+                  )
+                }
+                icon={CalendarDays}
+                tone="amber"
+                detail={ageDetail}
+              />
+              <SummaryCard
+                label="Countries represented"
+                value={data.metrics.countryCount}
+                icon={Globe2}
+                tone="teal"
+                detail="Locations in this selection"
+              />
             </section>
             <p className="mb-4 text-xs text-muted-foreground">
               Registered · UTC {data.filters.from} — {data.filters.to} ·{" "}
@@ -377,7 +398,7 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
                         Select a chart mark to explore matching people
                       </CardDescription>
                     </div>
-                    {kind === "registrations" && (
+                    {kind === "profile-timeline" && (
                       <ToggleGroup
                         aria-label="Time grouping"
                         size="sm"
@@ -391,7 +412,7 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
                         <ToggleGroupItem value="month">Monthly</ToggleGroupItem>
                       </ToggleGroup>
                     )}
-                    {kind === "countries" && (
+                    {kind === "geography" && (
                       <ToggleGroup
                         aria-label="Geographic grouping"
                         size="sm"
@@ -447,23 +468,9 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
                     disabled={query.isFetching || query.isError}
                     geography={geography}
                   />
-                  <p className="chart-note mt-0 shrink-0">{info.note}</p>
                 </CardContent>
               </Card>
             </div>
-            <p className="provenance">
-              Fictional profiles from{" "}
-              <a
-                className="underline underline-offset-4"
-                href="https://randomuser.me/documentation"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Random User
-              </a>
-              . Charts summarize the supplied ages, registration dates, genders,
-              and locations.
-            </p>
             <PeopleExplorer params={params} update={update} />
           </>
         )}

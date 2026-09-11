@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, SearchX } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -10,6 +10,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
   Field,
   FieldGroup,
   FieldLabel,
@@ -22,7 +28,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-  Skeleton,
   Table,
   TableBody,
   TableCell,
@@ -33,6 +38,8 @@ import {
 import { LabeledSelect } from "@/components/form-fields";
 import type { Person } from "../types";
 import { usePeoplePage } from "../hooks";
+import { PeopleTableSkeleton } from "./people-table-skeleton";
+import { PersonAvatar } from "./person-avatar";
 
 type Update = (patch: Record<string, string | null>, replace?: boolean) => void;
 function PeopleSearch({
@@ -80,6 +87,10 @@ export function PeopleExplorer({
   const data = query.data;
   const [selected, setSelected] = useState<Person | null>(null);
   const section = useRef<HTMLDivElement>(null);
+  const clearSearch = () => {
+    update({ search: null, page: null });
+    document.getElementById("people-search")?.focus();
+  };
   return (
     <div id="people-explorer" ref={section} className="mt-6 scroll-mt-6">
       <Card>
@@ -125,8 +136,8 @@ export function PeopleExplorer({
                 value={params.get("sort") ?? "registered_desc"}
                 onChange={(sort) => update({ sort, page: null })}
                 items={[
-                  { value: "registered_desc", label: "Latest registration" },
-                  { value: "registered_asc", label: "Earliest registration" },
+                  { value: "registered_desc", label: "Newest profile date" },
+                  { value: "registered_asc", label: "Oldest profile date" },
                   { value: "name_asc", label: "Name A–Z" },
                   { value: "name_desc", label: "Name Z–A" },
                   { value: "age_asc", label: "Youngest first" },
@@ -134,13 +145,9 @@ export function PeopleExplorer({
                 ]}
               />
             </FieldGroup>
-            {params.has("search") && (
+            {params.has("search") && data?.total !== 0 && (
               <div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => update({ search: null, page: null })}
-                >
+                <Button variant="secondary" size="sm" onClick={clearSearch}>
                   Clear search
                 </Button>
               </div>
@@ -173,17 +180,7 @@ export function PeopleExplorer({
                 </AlertDescription>
               </Alert>
             )}
-            {query.isPending && (
-              <div
-                role="status"
-                aria-label="Loading people"
-                className="flex flex-col gap-3"
-              >
-                {Array.from({ length: 6 }, (_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            )}
+            {query.isPending && <PeopleTableSkeleton />}
             {data && (
               <>
                 <div
@@ -198,7 +195,9 @@ export function PeopleExplorer({
                   <span className="text-muted-foreground">
                     {query.isFetching
                       ? "Updating people… Previous results remain visible."
-                      : `Page ${data.page} of ${data.pageCount}`}
+                      : data.total > 0
+                        ? `Page ${data.page} of ${data.pageCount}`
+                        : null}
                   </span>
                 </div>
                 <Sheet
@@ -207,82 +206,94 @@ export function PeopleExplorer({
                     if (!isOpen) setSelected(null);
                   }}
                 >
-                  <ScrollArea
-                    data-testid="people-scroll-area"
-                    aria-busy={query.isFetching}
-                    role="region"
-                    aria-label="Scrollable people table"
-                    className="h-[420px] min-w-0 [&>[data-slot=scroll-area-viewport]]:pr-3 [&>[data-slot=scroll-area-viewport]]:pb-3"
-                  >
-                    <Table
-                      data-testid="people-table"
-                      scrollable={false}
-                      className="min-w-[900px]"
+                  {data.total > 0 && (
+                    <ScrollArea
+                      data-testid="people-scroll-area"
+                      aria-busy={query.isFetching}
+                      role="region"
+                      aria-label="Scrollable people table"
+                      className="isolate h-[420px] min-w-0 [&>[data-slot=scroll-area-viewport]]:pr-3 [&>[data-slot=scroll-area-viewport]]:pb-3"
                     >
-                      <TableHeader>
-                        <TableRow>
-                          {[
-                            "Name",
-                            "Email",
-                            "Country / city",
-                            "Gender",
-                            "Age",
-                            "Registered",
-                          ].map((label) => (
-                            <TableHead
-                              key={label}
-                              className="sticky top-0 bg-card"
-                            >
-                              {label}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {data.items.map((person) => (
-                          <TableRow key={person.login.uuid}>
-                            <TableCell>
-                              <SheetTrigger
-                                render={
-                                  <Button
-                                    variant="link"
-                                    className="h-auto justify-start p-0 text-left"
-                                  />
-                                }
-                                onClick={() => setSelected(person)}
+                      <Table
+                        data-testid="people-table"
+                        scrollable={false}
+                        className="min-w-[900px]"
+                      >
+                        <TableHeader>
+                          <TableRow>
+                            {[
+                              "Name",
+                              "Email",
+                              "Country / city",
+                              "Gender",
+                              "Age",
+                              "Profile date",
+                            ].map((label) => (
+                              <TableHead
+                                key={label}
+                                className="sticky top-0 z-10 bg-card"
                               >
-                                {person.name.first} {person.name.last}
-                              </SheetTrigger>
-                            </TableCell>
-                            <TableCell>{person.email}</TableCell>
-                            <TableCell>
-                              <div>{person.location.country}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {person.location.city}
-                              </div>
-                            </TableCell>
-                            <TableCell className="capitalize">
-                              {person.gender}
-                            </TableCell>
-                            <TableCell>{person.dob.age}</TableCell>
-                            <TableCell>
-                              {person.registered.date.slice(0, 10)}
-                            </TableCell>
+                                {label}
+                              </TableHead>
+                            ))}
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
+                        </TableHeader>
+                        <TableBody>
+                          {data.items.map((person) => (
+                            <TableRow key={person.login.uuid}>
+                              <TableCell>
+                                <SheetTrigger
+                                  render={
+                                    <Button
+                                      variant="link"
+                                      className="h-auto justify-start p-0 text-left"
+                                    />
+                                  }
+                                  onClick={() => setSelected(person)}
+                                >
+                                  <PersonAvatar person={person} />
+                                  <span>
+                                    {person.name.first} {person.name.last}
+                                  </span>
+                                </SheetTrigger>
+                              </TableCell>
+                              <TableCell>{person.email}</TableCell>
+                              <TableCell>
+                                <div>{person.location.country}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {person.location.city}
+                                </div>
+                              </TableCell>
+                              <TableCell className="capitalize">
+                                {person.gender}
+                              </TableCell>
+                              <TableCell>{person.dob.age}</TableCell>
+                              <TableCell>
+                                {person.registered.date.slice(0, 10)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                  )}
                   <SheetContent>
                     <SheetHeader>
+                      {selected && (
+                        <PersonAvatar
+                          key={selected.login.uuid}
+                          person={selected}
+                          large
+                        />
+                      )}
                       <SheetTitle>
                         {selected
                           ? `${selected.name.first} ${selected.name.last}`
                           : "Person details"}
                       </SheetTitle>
                       <SheetDescription>
-                        Sample profile supplied by Random User.
+                        Contact information and profile details.
                       </SheetDescription>
                     </SheetHeader>
                     <ScrollArea
@@ -300,10 +311,13 @@ export function PeopleExplorer({
                               State: selected.location.state,
                               City: selected.location.city,
                               Nationality: selected.nat,
+                              "Provider ID": selected.id.value?.trim()
+                                ? `${selected.id.name || "ID"} · ${selected.id.value}`
+                                : "Not provided",
                               Gender: selected.gender,
                               Age: selected.dob.age,
                               "Date of birth": selected.dob.date.slice(0, 10),
-                              "Registered (UTC)":
+                              "Profile date (UTC)":
                                 selected.registered.date.slice(0, 10),
                             }).map(([label, value]) => (
                               <div
@@ -323,70 +337,81 @@ export function PeopleExplorer({
                               </div>
                             ))}
                           </dl>
-                          <p className="mt-6 text-xs text-muted-foreground">
-                            These values come from the API. Age is the supplied
-                            age, not recalculated from today’s date. This is a
-                            fictional person for testing.
-                          </p>
                         </div>
                       )}
                     </ScrollArea>
                   </SheetContent>
                 </Sheet>
                 {data.total === 0 && (
-                  <div className="py-8 text-center">
-                    <p className="font-medium">No matching people</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Try another search or change the report filters.
-                    </p>
+                  <Empty
+                    className="border py-10"
+                    data-testid="people-empty-state"
+                  >
+                    <EmptyHeader>
+                      <EmptyMedia>
+                        <div className="flex size-12 items-center justify-center rounded-xl bg-primary/5 text-primary">
+                          <SearchX className="size-6" aria-hidden="true" />
+                        </div>
+                      </EmptyMedia>
+                      <EmptyTitle>
+                        <h3>No matching people</h3>
+                      </EmptyTitle>
+                      <EmptyDescription>
+                        {params.get("search")
+                          ? "Try a different name, email, or location, or clear your search. Your report filters will stay the same."
+                          : "No profiles match the current report filters. Adjust the filters above to broaden your selection."}
+                      </EmptyDescription>
+                    </EmptyHeader>
                     {params.has("search") && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => update({ search: null, page: null })}
-                      >
-                        Clear search
-                      </Button>
+                      <EmptyContent>
+                        <Button onClick={clearSearch}>Clear search</Button>
+                      </EmptyContent>
                     )}
+                  </Empty>
+                )}
+                {data.total > 0 && (
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div className="w-32">
+                      <LabeledSelect
+                        id="page-size"
+                        label="Rows per page"
+                        value={String(data.pageSize)}
+                        items={[10, 25, 50, 100].map((n) => ({
+                          value: String(n),
+                          label: String(n),
+                        }))}
+                        onChange={(pageSize) =>
+                          update({ pageSize, page: null })
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={data.page <= 1 || query.isFetching}
+                        onClick={() => update({ page: String(data.page - 1) })}
+                      >
+                        <ChevronLeft data-icon="inline-start" />
+                        Previous
+                      </Button>
+                      <span className="text-sm tabular-nums">
+                        {data.page} / {data.pageCount}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          data.page >= data.pageCount || query.isFetching
+                        }
+                        onClick={() => update({ page: String(data.page + 1) })}
+                      >
+                        Next
+                        <ChevronRight data-icon="inline-end" />
+                      </Button>
+                    </div>
                   </div>
                 )}
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div className="w-32">
-                    <LabeledSelect
-                      id="page-size"
-                      label="Rows per page"
-                      value={String(data.pageSize)}
-                      items={[10, 25, 50, 100].map((n) => ({
-                        value: String(n),
-                        label: String(n),
-                      }))}
-                      onChange={(pageSize) => update({ pageSize, page: null })}
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={data.page <= 1 || query.isFetching}
-                      onClick={() => update({ page: String(data.page - 1) })}
-                    >
-                      <ChevronLeft data-icon="inline-start" />
-                      Previous
-                    </Button>
-                    <span className="text-sm tabular-nums">
-                      {data.page} / {data.pageCount}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={data.page >= data.pageCount || query.isFetching}
-                      onClick={() => update({ page: String(data.page + 1) })}
-                    >
-                      Next
-                      <ChevronRight data-icon="inline-end" />
-                    </Button>
-                  </div>
-                </div>
               </>
             )}
           </CardContent>

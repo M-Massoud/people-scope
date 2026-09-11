@@ -9,6 +9,8 @@ export type Person = {
   registered: { date: string };
   phone: string;
   nat: string;
+  picture: { large: string; thumbnail: string };
+  id: { name: string; value: string | null };
 };
 export type PeopleFilters = {
   continent?: string;

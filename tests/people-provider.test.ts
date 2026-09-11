@@ -28,7 +28,7 @@ function serve(body: unknown = { results, info }) {
         url.searchParams.get("results") !== "5000" ||
         url.searchParams.has("nat") ||
         url.searchParams.get("inc") !==
-          "name,gender,location,email,dob,registered,phone,nat,login"
+          "name,gender,location,email,dob,registered,phone,nat,login,picture,id"
       )
         throw new Error("Unexpected Random User request.");
       return Response.json(body);
@@ -50,7 +50,11 @@ describe("direct Random User provider", () => {
             salt: "salt",
             sha256: "hash",
           },
-          picture: { large: "https://example.com/photo" },
+          picture: {
+            ...results[0].picture,
+            medium: "https://randomuser.me/api/portraits/med/women/0.jpg",
+          },
+          cell: "Unused phone field",
         },
         ...results.slice(1),
       ],
@@ -63,6 +67,28 @@ describe("direct Random User provider", () => {
     expect(
       new Set(snapshot.people.map((person) => person.location.country)).size,
     ).toBe(5);
+  });
+
+  it("retains pictures and provider IDs without treating a missing ID as invalid", async () => {
+    const picture = {
+      large: "https://randomuser.me/api/portraits/women/1.jpg",
+      thumbnail: "https://randomuser.me/api/portraits/thumb/women/1.jpg",
+    };
+    serve({
+      results: [
+        { ...results[0], picture, id: { name: "TEST", value: "DEMO-123" } },
+        { ...results[1], picture, id: { name: "", value: null } },
+        ...results.slice(2),
+      ],
+      info,
+    });
+    const snapshot = await fetchPeopleSnapshot();
+    expect(snapshot.people[0]).toMatchObject({
+      picture,
+      id: { name: "TEST", value: "DEMO-123" },
+    });
+    expect(snapshot.people[1]).toMatchObject({ id: { name: "", value: null } });
+    expect(snapshot.people[0].login).toEqual(results[0].login);
   });
 
   it("shares an in-flight batch and reuses it for five minutes", async () => {

@@ -1,17 +1,17 @@
 "use client";
+import { PAGES } from "@/config";
 
 import { Suspense, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, MapPin } from "lucide-react";
 import { patchParams } from "@/lib";
 import { useCountryComparison } from "../hooks";
-import { Shell } from "@/components";
+import { Shell, SummaryCard } from "@/components";
 import { LabeledSelect } from "@/components/form-fields";
 import {
   Alert,
   AlertDescription,
-  Badge,
   Button,
   Card,
   CardContent,
@@ -69,9 +69,9 @@ export function ComparisonPage() {
   return (
     <Suspense
       fallback={
-        <Shell active="comparison">
+        <Shell active="compare-countries">
           <div className="report-page">
-            <h1>Country comparison</h1>
+            <h1>{PAGES["compare-countries"].title}</h1>
             <ComparisonSkeleton />
           </div>
         </Shell>
@@ -96,7 +96,8 @@ function ComparisonContent() {
     window.history.pushState(null, "", url);
     setCopyMessage("");
   };
-  const reset = () => window.history.pushState(null, "", "/comparison");
+  const reset = () =>
+    window.history.pushState(null, "", PAGES["compare-countries"].href);
   const option = useMemo(
     () => comparisonOption(data?.groups ?? [], view),
     [data, view],
@@ -104,16 +105,12 @@ function ComparisonContent() {
   const ready = data && !query.isError;
 
   return (
-    <Shell active="comparison">
+    <Shell active="compare-countries">
       <div className="report-page">
         <div className="page-heading">
           <div>
-            <h1>Country comparison</h1>
+            <h1>{PAGES["compare-countries"].title}</h1>
             <p>Compare the age profiles of two countries in this sample.</p>
-          </div>
-          <div className="report-status">
-            <Badge variant="outline">Random User · sample data</Badge>
-            {data && <span>Fetched {data.meta.fetchedAt.slice(0, 10)}</span>}
           </div>
         </div>
         {data && data.groups.length === 2 && (
@@ -215,16 +212,18 @@ function ComparisonContent() {
         {ready && data.groups.length === 2 && (
           <>
             <section
-              className="mb-5 flex flex-wrap gap-x-8 gap-y-2 text-sm"
+              className="report-summary comparison-summary"
               aria-label="Country sample sizes"
             >
-              {data.groups.map((group) => (
-                <p key={group.country}>
-                  <strong>{group.country}</strong>
-                  <span className="ml-2 text-muted-foreground">
-                    {group.total.toLocaleString("en-US")} people
-                  </span>
-                </p>
+              {data.groups.map((group, index) => (
+                <SummaryCard
+                  key={group.country}
+                  label={group.country}
+                  value={group.total.toLocaleString("en-US")}
+                  icon={MapPin}
+                  tone={index === 0 ? "blue" : "teal"}
+                  detail="People in the country sample"
+                />
               ))}
             </section>
             <div className="report-grid" aria-busy={query.isFetching}>
@@ -317,17 +316,9 @@ function ComparisonContent() {
                     </Table>
                     <ScrollBar orientation="horizontal" />
                   </ScrollArea>
-                  <p className="chart-note mt-0 shrink-0">
-                    Percentage = people in the age group ÷ people in that
-                    country × 100. Rounded shares may not total exactly 100%.
-                  </p>
                 </CardContent>
               </Card>
             </div>
-            <p className="provenance">
-              Fictional profiles from Random User. These shapes describe this
-              sample, not national population statistics or quality scores.
-            </p>
           </>
         )}
       </div>

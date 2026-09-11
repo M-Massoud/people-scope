@@ -1,3 +1,4 @@
+import type { ReportPageId } from "@/config";
 import type { PeopleFilters, PeopleMeta, CountryRow } from "@/modules/people";
 
 export type TimelineRow = {
@@ -31,5 +32,4 @@ export type PeopleReport = {
   ages: AgeRow[];
   countries: CountryRow[];
 };
-export type PeopleReportKind =
-  "registrations" | "ages" | "demographics" | "countries";
+export type PeopleReportKind = ReportPageId;

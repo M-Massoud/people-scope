@@ -191,10 +191,9 @@ export function HeatmapPanel({
         <div className="mt-3 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
           <span>
             Color scale: 0–{heatmapScale(rows, metric)}
-            {metric === "share" ? "%" : " people"}. Recalculated for the current
-            filters.
+            {metric === "share" ? "%" : " people"}
           </span>
-          <span>A dash means zero people.</span>
+          <span>— = 0 people</span>
         </div>
       </CardContent>
     </Card>

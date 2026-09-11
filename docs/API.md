@@ -5,19 +5,19 @@
 - `GET /api/reports`: filters, available period/countries, provenance, metrics, timeline rows, age/gender counts, country counts. No raw people collection.
 - `GET /api/people`: `items`, `total`, `page`, `pageSize`, `pageCount`.
 - `GET /api/comparison`: `availableCountries`, `meta`, and two `groups`, each with `country`, `total`, and `ages` containing `key`, `label`, `count`, and `percentage`.
-- `GET /api/heatmap`: `meta`, applied `filters`, `totalPeople`, `ageGroups`, and country `rows` with `total` and age-ordered `cells` containing `count` and `percentage`.
+- `GET /api/heatmap`: `meta`, applied `filters`, `totalPeople`, `ageGroups`, and country `rows` with `total`, `averageAge`, and age-ordered `cells` containing `count` and `percentage`.
 
 All are read-only Next.js route handlers and use the same Random User provider. All return no-store responses; the provider has its own in-memory batch cache. Invalid input returns 400; provider failures return 502. No local dataset is substituted.
 
 ## Report and people parameters
 
-| Parameter | Meaning |
-| --- | --- |
-| `country` | Exact `location.country` value or `all` (default) |
-| `continent` | Optional derived location group: Africa, Asia, Europe, North America, South America, Oceania, Antarctica, or Unmapped |
-| `gender` | `male`, `female`, or `all` (default) |
-| `ageMin`, `ageMax` | Optional inclusive integer bounds, 0–120; minimum cannot exceed maximum |
-| `from`, `to` | Inclusive UTC registration dates in YYYY-MM-DD; default to full available period |
+| Parameter          | Meaning                                                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `country`          | Exact `location.country` value or `all` (default)                                                                     |
+| `continent`        | Optional derived location group: Africa, Asia, Europe, North America, South America, Oceania, Antarctica, or Unmapped |
+| `gender`           | `male`, `female`, or `all` (default)                                                                                  |
+| `ageMin`, `ageMax` | Optional inclusive integer bounds, 0–120; minimum cannot exceed maximum                                               |
+| `from`, `to`       | Inclusive UTC registration dates in YYYY-MM-DD; default to full available period                                      |
 
 Country choices come from the full loaded batch. Dates must be valid and ordered, between 1900 and 2100.
 
@@ -42,18 +42,16 @@ The comparison uses all profiles in each chosen country, regardless of report fi
 
 ## Heatmap parameters
 
-`/api/heatmap?continent=Europe&gender=female` filters profiles before calculating country totals and age-group percentages. Only `continent` and `gender` affect the matrix; all registration dates and age groups are included. Unknown query keys are ignored. Country rows are returned alphabetically. Cells with zero people remain present, and each nonempty country row totals 100% before display rounding. No matching profiles returns `rows: []` and `totalPeople: 0`.
+`/api/heatmap?continent=Europe&gender=female` filters profiles before calculating country totals, average ages, and age-group percentages. Aggregate filters are `continent`, `gender`, and optional `band` (for example `18-24`, `75-120`, or `all`). All registration dates are included. An invalid age band returns 400. Unknown query keys are ignored. Country rows are returned alphabetically. Cells with zero people remain present, and each nonempty country row totals 100% before display rounding. No matching profiles returns `rows: []` and `totalPeople: 0`.
 
-The page's `metric=share|count`, `order=name|size|older`, and `display=chart|table` parameters are browser-only display state. A selected cell adds `country`, `ageMin`, `ageMax`, and `explore=1`; those parameters filter `/api/people` without narrowing or refetching the matrix. Changing continent or gender clears that selection and its search/page state. Each country's percentages use the filtered country total, never the global sample size.
+The page's `view`, `color`, `metric=share|count`, `order=name|size|older`, and `display=chart|table` parameters are browser-only display state. A selected country or cell adds explorer parameters such as `country`, `ageMin`, `ageMax`, and `explore=1`; those parameters filter `/api/people` without narrowing or refetching the aggregate. Changing continent, gender, or age band clears that selection and its search/page state. Each country's percentages use the filtered country total, never the global sample size. Country average age is computed from the same filtered profiles.
 
 ## Records
 
-`src/modules/people/types.ts` describes the selected API fields. The nested shapes are preserved: `name.first`, `location.country`, `dob.age`, `registered.date`, `login.uuid`, etc. Only UUID is retained from login; passwords and hashes are stripped during validation.
+`src/modules/people/types.ts` describes the selected API fields. The nested shapes are preserved: `name.first`, `location.country`, `dob.age`, `registered.date`, `login.uuid`, etc. Only UUID is retained from login; passwords and hashes are stripped during validation. People responses also include `picture.large`, `picture.thumbnail`, and provider `id.name` / `id.value`. ID values may be null or empty; they are display data, not the record key.
 
 Totals count matching records. Average age uses supplied ages and is null for an empty selection. Country count means distinct countries in that selection. Age buckets are 0–17, 18–24, 25–34, 35–44, 45–54, 55–64, 65–74, and 75+. Country rows contain positive counts, ordered by count descending, then name.
 
 ## Limitations
 
 Profiles are API-generated test data. No authentication or tenant isolation is implemented. The server processes a fixed 5,000-record batch in memory; this is a practice project, not a production customer directory.
-
-World-map extension: `/api/heatmap` accepts `band` (for example `18-24`, `75-120`, or `all`). Each country row also includes `averageAge`, computed from filtered profile ages. `view`, `color`, and `order` are display-only; `country`, `ageMin`, and `ageMax` remain explorer selections and do not filter the aggregate.

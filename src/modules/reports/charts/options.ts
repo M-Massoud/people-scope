@@ -2,11 +2,21 @@ import type { AgeRow, TimelineRow } from "../types";
 import type { CountryRow } from "@/modules/people";
 import { CHART_COLORS, type ChartOption } from "@/components/charts";
 
+const continentColors: Record<string, string> = {
+  Europe: CHART_COLORS[0],
+  Asia: CHART_COLORS[1],
+  "North America": CHART_COLORS[2],
+  "South America": CHART_COLORS[4],
+  Oceania: CHART_COLORS[3],
+  Africa: "#6c9141",
+  Antarctica: "#78879f",
+  Unmapped: "#78879f",
+};
+
 const base: ChartOption = {
-  animation: false,
+  animation: true,
   color: CHART_COLORS,
   textStyle: {
-    fontFamily: "IBM Plex Sans, sans-serif",
     fontSize: 11,
     color: "#67717e",
   },
@@ -37,18 +47,18 @@ const bars: ChartOption = {
   },
 };
 
-export function registrationOption(rows: TimelineRow[]): ChartOption {
+export function timelineOption(rows: TimelineRow[]): ChartOption {
   return {
     ...bars,
     dataset: {
-      id: "registrations",
+      id: "profile-timeline",
       dimensions: ["key", "label", "from", "to", "count"],
       source: rows.map((row) => ({ ...row })),
     },
     series: [
       {
-        id: "registration-count",
-        name: "People registered",
+        id: "profile-timeline-count",
+        name: "Profiles",
         type: "bar",
         barMaxWidth: 52,
         encode: {
@@ -58,17 +68,18 @@ export function registrationOption(rows: TimelineRow[]): ChartOption {
           itemName: "label",
           tooltip: ["count"],
         },
-        itemStyle: { color: CHART_COLORS[0] },
+        itemStyle: { color: CHART_COLORS[0], borderRadius: [4, 4, 0, 0] },
+        emphasis: { focus: "self" },
       },
     ],
   };
 }
 
-export function ageOption(rows: AgeRow[]): ChartOption {
+export function ageGroupsOption(rows: AgeRow[]): ChartOption {
   return {
     ...bars,
     dataset: {
-      id: "ages",
+      id: "age-groups",
       dimensions: ["key", "label", "min", "max", "total", "male", "female"],
       source: rows.map((row) => ({ ...row })),
     },
@@ -85,13 +96,14 @@ export function ageOption(rows: AgeRow[]): ChartOption {
           itemName: "label",
           tooltip: ["total"],
         },
-        itemStyle: { color: CHART_COLORS[0] },
+        itemStyle: { color: CHART_COLORS[0], borderRadius: [4, 4, 0, 0] },
+        emphasis: { focus: "self" },
       },
     ],
   };
 }
 
-export function demographicOption(rows: AgeRow[]): ChartOption {
+export function ageGenderOption(rows: AgeRow[]): ChartOption {
   return {
     ...bars,
     grid: { left: 12, right: 16, top: 48, bottom: 12, containLabel: true },
@@ -104,7 +116,7 @@ export function demographicOption(rows: AgeRow[]): ChartOption {
       selectedMode: false,
     },
     dataset: {
-      id: "demographics",
+      id: "age-gender",
       dimensions: ["key", "label", "min", "max", "total", "male", "female"],
       source: rows.map((row) => ({ ...row })),
     },
@@ -133,12 +145,13 @@ export function demographicOption(rows: AgeRow[]): ChartOption {
         itemName: "label",
         tooltip: [dimension],
       },
-      itemStyle: { color },
+      itemStyle: { color, borderRadius: [4, 4, 0, 0] },
+      emphasis: { focus: "series" },
     })),
   };
 }
 
-export function countryOption(rows: CountryRow[]): ChartOption {
+export function geographyOption(rows: CountryRow[]): ChartOption {
   const total = rows.reduce((sum, row) => sum + row.count, 0);
   return {
     ...base,
@@ -167,7 +180,7 @@ export function countryOption(rows: CountryRow[]): ChartOption {
       },
     },
     dataset: {
-      id: "countries",
+      id: "geography",
       dimensions: ["name", "count"],
       source: rows.map((row) => ({ ...row })),
     },
@@ -183,7 +196,15 @@ export function countryOption(rows: CountryRow[]): ChartOption {
         label: { show: false },
         labelLine: { show: false },
         emphasis: { label: { show: false }, scaleSize: 4 },
-        itemStyle: { borderWidth: 2, borderColor: "#fff" },
+        itemStyle: {
+          borderWidth: 3,
+          borderColor: "#fff",
+          borderRadius: 5,
+          // A continent keeps its color when filtering changes the slice order.
+          color: (params) =>
+            continentColors[params.name] ??
+            CHART_COLORS[params.dataIndex % CHART_COLORS.length],
+        },
         encode: {
           itemName: "name",
           itemId: "name",

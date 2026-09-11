@@ -29,9 +29,9 @@ test("country comparison switches charts, preserves selections and fits mobile",
   page.on("request", (request) => {
     if (request.url().includes("/api/comparison?")) requests++;
   });
-  await page.goto("/comparison");
+  await page.goto("/compare-countries");
   await expect(
-    page.getByRole("heading", { name: "Country comparison", exact: true }),
+    page.getByRole("heading", { name: "Compare countries", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByTestId("comparison-chart").locator("canvas"),
@@ -100,7 +100,7 @@ test("country comparison switches charts, preserves selections and fits mobile",
 test("invalid comparison can reset and a pending request shows aligned skeletons", async ({
   page,
 }) => {
-  await page.goto("/comparison?countryA=Atlantis");
+  await page.goto("/compare-countries?countryA=Atlantis");
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "available",
   );

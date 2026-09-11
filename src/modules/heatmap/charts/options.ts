@@ -48,7 +48,7 @@ export function heatmapOption(
   const count = (value: number) => value.toLocaleString("en-US");
   return {
     animation: false,
-    textStyle: { fontFamily: "IBM Plex Sans, sans-serif", fontSize: 12 },
+    textStyle: { fontSize: 12 },
     grid: { left: 144, right: 24, top: 38, bottom: 76 },
     xAxis: {
       type: "category",

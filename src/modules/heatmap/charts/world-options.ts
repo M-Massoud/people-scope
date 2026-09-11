@@ -31,7 +31,6 @@ export function worldMapOption(
   );
   return {
     animation: false,
-    textStyle: { fontFamily: "IBM Plex Sans, sans-serif" },
     tooltip: {
       trigger: "item",
       renderMode: "richText",
@@ -57,7 +56,7 @@ export function worldMapOption(
       calculable: false,
       precision: 0,
       text: [metric === "age" ? `${max} years` : `${max} people`, String(min)],
-      inRange: { color: ["#dce9f2", "#83aacb", "#426d99", "#163f69"] },
+      inRange: { color: ["#e1edff", "#a1c2f0", "#568be0", "#2859b8"] },
       textStyle: { color: "#627080", fontSize: 11 },
     },
     series: {

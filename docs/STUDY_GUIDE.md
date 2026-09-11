@@ -2,11 +2,11 @@
 
 ## What did we build?
 
-A people-data dashboard. It shows registrations over time, age groups, gender counts, countries, and an age comparison between two countries. Users can filter a report, click a chart, and inspect the matching profiles in a searchable table.
+A people-data dashboard. It shows a profile timeline, age groups, gender counts, countries, and an age comparison between two countries. Users can filter a report, click a chart, and inspect the matching profiles in a searchable table.
 
 ## Where does the data come from?
 
-Random User supplies 5,000 fictional profiles. We use its name, email, phone, location, gender, age, birth date, registration date, nationality, and UUID. We do not assign extra business details. Zod keeps only the fields we use; for login, only UUID is retained.
+Random User supplies 5,000 fictional profiles. We use its name, email, phone, location, gender, age, birth date, registration date, nationality, portrait URLs, provider ID, and UUID. We do not assign extra business details. Zod keeps only the fields we use; for login, only UUID is retained.
 
 A simple example: if the API says a person is 29 and lives in Canada, our age chart counts that record in 25–34 and our country chart counts it in Canada. We did not invent those values.
 
@@ -22,10 +22,11 @@ Opening the explorer asks `/api/people` for one page of those records. Search, s
 
 ## What do the folders mean?
 
-- `app`: pages and our three API endpoints.
-- `components`: the visible interface, filters, tables, charts, and shadcn components.
-- `lib`: shared types, URL helpers, and React Query hooks.
-- `server`: code that fetches and processes API data.
+- `app`: route entry points, layout, error pages, and four API endpoints.
+- `config`: canonical page IDs, labels, and paths.
+- `modules`: people, reports, comparison, and heatmap, each owning its components, hooks, types, and server functions.
+- `components`: shared UI, form fields, shell, and chart renderer.
+- `lib`: generic HTTP, URL, and class-name helpers.
 - `tests`: test code and offline fixtures, never production data.
 
 ## What do the libraries do?
@@ -64,7 +65,7 @@ Choose two countries on Compare countries. The server selects the profiles for e
 
 The Bar and Radar buttons display those same percentages in different ways. Each radar spoke is an age group; each shape is a country. Both countries use one percentage scale, rounded up to fit the largest value, and the page states its maximum. Tooltips and the table show counts too. These are sample distributions, not quality scores or national statistics.
 
-This page uses all ages, genders, and registration dates. Its country selections apply immediately. Countries and chart view are stored in the URL, so refresh, Back, and Copy view link preserve the comparison. Switching chart type does not fetch data again; ECharts starts a new chart instance for the new type. Country changes update the existing instance after the new response arrives.
+This page uses all ages, genders, and registration dates. Its country selections apply immediately. Countries and chart view are stored in the URL, so refresh, Back, and Copy view link preserve the comparison. Switching chart type does not fetch data again; ECharts updates the existing chart instance using stable series IDs and replacement of obsolete series. Country changes update the existing instance after the new response arrives.
 
 ## Where do continents come from?
 

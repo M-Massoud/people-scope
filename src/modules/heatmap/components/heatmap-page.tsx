@@ -1,13 +1,13 @@
 "use client";
+import { PAGES } from "@/config";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Link as LinkIcon, X } from "lucide-react";
-import { Shell } from "@/components";
+import { Link as LinkIcon, X, Users, Globe2, CalendarDays } from "lucide-react";
+import { Shell, SummaryCard } from "@/components";
 import { LabeledSelect } from "@/components/form-fields";
 import {
   Alert,
   AlertDescription,
-  Badge,
   Button,
   Empty,
   EmptyDescription,
@@ -38,7 +38,7 @@ export function HeatmapPage() {
       fallback={
         <Shell active="heatmap">
           <div className="report-page">
-            <h1>People & geography</h1>
+            <h1>{PAGES.heatmap.title}</h1>
             <HeatmapSkeleton />
           </div>
         </Shell>
@@ -148,14 +148,10 @@ function HeatmapContent() {
       <div className="report-page">
         <div className="page-heading flex-col items-start sm:flex-row sm:items-center">
           <div>
-            <h1>People & geography</h1>
+            <h1>{PAGES.heatmap.title}</h1>
             <p>
               Explore where people are from and how their age profiles compare.
             </p>
-          </div>
-          <div className="report-status items-start sm:items-end">
-            <Badge variant="outline">Random User · sample data</Badge>
-            {data && <span>Fetched {data.meta.fetchedAt.slice(0, 10)}</span>}
           </div>
         </div>
         <div className="filter-panel">
@@ -279,27 +275,40 @@ function HeatmapContent() {
         {ready && (
           <>
             <section className="report-summary" aria-label="Heatmap summary">
-              <div>
-                <span>People in this selection</span>
-                <strong>{data.totalPeople.toLocaleString("en-US")}</strong>
-              </div>
-              <div>
-                <span>Countries represented</span>
-                <strong>{data.rows.length}</strong>
-              </div>
-              <div>
-                <span>Average age</span>
-                <strong>
-                  {data.totalPeople
-                    ? (
+              <SummaryCard
+                label="People in this selection"
+                value={data.totalPeople.toLocaleString("en-US")}
+                icon={Users}
+                detail="Profiles matching your filters"
+              />
+              <SummaryCard
+                label="Countries represented"
+                value={data.rows.length}
+                icon={Globe2}
+                tone="teal"
+                detail="Explore a country on the map"
+              />
+              <SummaryCard
+                label="Average age"
+                value={
+                  data.totalPeople ? (
+                    <>
+                      {(
                         data.rows.reduce(
                           (sum, row) => sum + row.averageAge * row.total,
                           0,
                         ) / data.totalPeople
-                      ).toFixed(1)
-                    : "—"}
-                </strong>
-              </div>
+                      ).toFixed(1)}
+                      <small>years</small>
+                    </>
+                  ) : (
+                    "—"
+                  )
+                }
+                icon={CalendarDays}
+                tone="amber"
+                detail="Across the selected profiles"
+              />
             </section>
             {query.isFetching && (
               <Alert role="status" className="mb-4">
@@ -429,10 +438,6 @@ function HeatmapContent() {
                 )}
               </>
             )}
-            <p className="provenance">
-              Fictional profiles from Random User. Colors describe this sample,
-              not national population statistics.
-            </p>
           </>
         )}
       </div>

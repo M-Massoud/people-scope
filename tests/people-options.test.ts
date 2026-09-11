@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { BarSeriesOption, PieSeriesOption } from "echarts/charts";
 import {
-  ageOption,
-  countryOption,
-  demographicOption,
-  registrationOption,
+  ageGroupsOption,
+  geographyOption,
+  ageGenderOption,
+  timelineOption,
 } from "@/modules/reports/charts";
 import type { AgeRow } from "@/modules/reports";
 
@@ -47,7 +47,7 @@ describe("people chart contracts", () => {
         count: 9,
       },
     ];
-    const option = registrationOption(rows);
+    const option = timelineOption(rows);
     expect(option.dataset).toMatchObject({ source: rows });
     expect(option.xAxis).toMatchObject({ type: "category" });
     expect(option.yAxis).toMatchObject({
@@ -68,7 +68,7 @@ describe("people chart contracts", () => {
   });
 
   it("plots age totals without losing empty buckets or their selectable identity", () => {
-    const option = ageOption(ages);
+    const option = ageGroupsOption(ages);
     expect(option.dataset).toMatchObject({ source: ages });
     expect(option.yAxis).toMatchObject({
       type: "value",
@@ -88,7 +88,7 @@ describe("people chart contracts", () => {
   });
 
   it("groups actual male and female counts on one shared count scale", () => {
-    const option = demographicOption(ages);
+    const option = ageGenderOption(ages);
     const series = option.series as BarSeriesOption[];
     expect(option.dataset).toMatchObject({ source: ages });
     expect(option.yAxis).toMatchObject({
@@ -123,7 +123,7 @@ describe("people chart contracts", () => {
     );
     expect(new Set(series.map((entry) => entry.id)).size).toBe(2);
     expect(
-      (demographicOption([]).series as BarSeriesOption[]).map(
+      (ageGenderOption([]).series as BarSeriesOption[]).map(
         (entry) => entry.id,
       ),
     ).toEqual(series.map((entry) => entry.id));
@@ -134,7 +134,7 @@ describe("people chart contracts", () => {
       name: `Country ${21 - index}`,
       count: index + 1,
     }));
-    const option = countryOption(rows);
+    const option = geographyOption(rows);
     expect(option.dataset).toMatchObject({ source: rows });
     expect(option.series).toEqual([
       expect.objectContaining({
@@ -161,18 +161,47 @@ describe("people chart contracts", () => {
   });
 
   it("does not turn an empty country sample into equal-size slices", () => {
-    const option = countryOption([
+    const option = geographyOption([
       { name: "Canada", count: 0 },
       { name: "Brazil", count: 0 },
     ]);
     expect((option.series as PieSeriesOption[])[0].stillShowZeroSum).toBe(
       false,
     );
-    expect(countryOption([]).dataset).toMatchObject({ source: [] });
+    expect(geographyOption([]).dataset).toMatchObject({ source: [] });
+  });
+
+  it("keeps continent colors stable when filters reorder or remove slices", () => {
+    const colorFor = (
+      rows: { name: string; count: number }[],
+      name: string,
+    ) => {
+      const series = (geographyOption(rows).series as PieSeriesOption[])[0];
+      const color = series.itemStyle!.color as (params: {
+        name: string;
+        dataIndex: number;
+      }) => string;
+      return color({
+        name,
+        dataIndex: rows.findIndex((row) => row.name === name),
+      });
+    };
+    const rows = [
+      { name: "Europe", count: 30 },
+      { name: "Asia", count: 20 },
+      { name: "Oceania", count: 10 },
+    ];
+    expect(colorFor(rows, "Asia")).toBe(
+      colorFor([{ name: "Asia", count: 5 }], "Asia"),
+    );
+    expect(colorFor(rows, "Europe")).toBe(
+      colorFor([...rows].reverse(), "Europe"),
+    );
+    expect(colorFor(rows, "Asia")).not.toBe(colorFor(rows, "Europe"));
   });
 
   it("formats a country dataset row as its full name, count, and share", () => {
-    const option = countryOption([
+    const option = geographyOption([
       { name: "United Kingdom", count: 3 },
       { name: "Canada", count: 1 },
     ]);
@@ -186,7 +215,7 @@ describe("people chart contracts", () => {
   });
 
   it("uses canvas tooltips and stable IDs across filtered registration and age updates", () => {
-    for (const build of [registrationOption, ageOption]) {
+    for (const build of [timelineOption, ageGroupsOption]) {
       const option = build([]);
       const series = option.series as BarSeriesOption[];
       expect(series[0].id).toBeTruthy();
@@ -195,8 +224,8 @@ describe("people chart contracts", () => {
         confine: true,
       });
     }
-    expect((ageOption(ages).series as BarSeriesOption[])[0].id).toBe(
-      (ageOption([]).series as BarSeriesOption[])[0].id,
+    expect((ageGroupsOption(ages).series as BarSeriesOption[])[0].id).toBe(
+      (ageGroupsOption([]).series as BarSeriesOption[])[0].id,
     );
   });
 });

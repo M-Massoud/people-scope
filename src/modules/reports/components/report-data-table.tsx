@@ -27,15 +27,15 @@ export function ReportDataTable({
   geography?: "country" | "continent";
 }) {
   const headers =
-    kind === "registrations"
+    kind === "profile-timeline"
       ? [data.grouping === "year" ? "Year" : "Month", "People"]
-      : kind === "countries"
+      : kind === "geography"
         ? [
             geography === "continent" ? "Continent" : "Country",
             "People",
             "Share",
           ]
-        : kind === "demographics"
+        : kind === "age-gender"
           ? ["Age group", "Male", "Female"]
           : ["Age group", "People"];
   const count = (n: number) => n.toLocaleString("en-US");
@@ -63,7 +63,7 @@ export function ReportDataTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {kind === "registrations" &&
+          {kind === "profile-timeline" &&
             data.timeline.map((row) => (
               <TableRow key={row.key}>
                 <TableCell>
@@ -72,7 +72,7 @@ export function ReportDataTable({
                     variant="link"
                     size="sm"
                     className="h-auto p-0"
-                    aria-label={`View ${row.label} registrations`}
+                    aria-label={`View profiles from ${row.label}`}
                     onClick={() => drill({ from: row.from, to: row.to })}
                   >
                     {row.label}
@@ -83,7 +83,7 @@ export function ReportDataTable({
                 </TableCell>
               </TableRow>
             ))}
-          {kind === "countries" &&
+          {kind === "geography" &&
             (geography === "continent"
               ? groupByContinent(data.countries)
               : data.countries
@@ -115,7 +115,7 @@ export function ReportDataTable({
                 </TableCell>
               </TableRow>
             ))}
-          {(kind === "ages" || kind === "demographics") &&
+          {(kind === "age-groups" || kind === "age-gender") &&
             data.ages.map((row) => (
               <TableRow key={row.key}>
                 <TableCell>
@@ -135,7 +135,7 @@ export function ReportDataTable({
                     {row.label}
                   </Button>
                 </TableCell>
-                {kind === "ages" ? (
+                {kind === "age-groups" ? (
                   <TableCell className="text-right tabular-nums">
                     {count(row.total)}
                   </TableCell>

@@ -1,3 +1,4 @@
+import { SummarySkeleton } from "@/components";
 import { Card, CardContent, CardHeader, Skeleton } from "@/components/ui";
 export function ReportSkeleton() {
   return (
@@ -22,14 +23,7 @@ export function ReportSkeleton() {
           <Skeleton className="h-7 w-24" />
         </div>
       </div>
-      <div className="report-summary" aria-hidden="true">
-        {[0, 1, 2].map((i) => (
-          <div key={i}>
-            <Skeleton className="h-3 w-28" />
-            <Skeleton className={i === 0 ? "h-9 w-24" : "h-6 w-44"} />
-          </div>
-        ))}
-      </div>
+      <SummarySkeleton />
       <div className="report-grid items-stretch" aria-hidden="true">
         <Card>
           <CardHeader>

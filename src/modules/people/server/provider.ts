@@ -1,6 +1,29 @@
 import { z } from "zod";
 import type { PeopleSnapshot } from "../types";
 
+// Keep the request, validation, and cache settings together.
+const RANDOM_USER_CONFIG = {
+  version: "1.4",
+  seed: "northline", // Preserve the existing sample despite the app's rename.
+  results: 5000,
+  page: 1,
+  fields: [
+    "name",
+    "gender",
+    "location",
+    "email",
+    "dob",
+    "registered",
+    "phone",
+    "nat",
+    "login",
+    "picture",
+    "id",
+  ],
+  cacheTtlMs: 5 * 60_000,
+  timeoutMs: 15_000,
+} as const;
+
 const text = z
   .string()
   .min(1)
@@ -19,15 +42,23 @@ const personSchema = z.object({
   registered: z.object({ date: z.iso.datetime() }),
   phone: text,
   nat: z.string().regex(/^[A-Z]{2}$/),
+  picture: z.object({
+    large: z.url({ protocol: /^https$/ }),
+    thumbnail: z.url({ protocol: /^https$/ }),
+  }),
+  id: z.object({
+    name: z.string().max(200),
+    value: z.string().max(200).nullable(),
+  }),
 });
 const batchSchema = z
   .object({
-    results: z.array(personSchema).length(5000),
+    results: z.array(personSchema).length(RANDOM_USER_CONFIG.results),
     info: z.object({
-      seed: z.literal("northline"),
-      results: z.literal(5000),
-      page: z.literal(1),
-      version: z.literal("1.4"),
+      seed: z.literal(RANDOM_USER_CONFIG.seed),
+      results: z.literal(RANDOM_USER_CONFIG.results),
+      page: z.literal(RANDOM_USER_CONFIG.page),
+      version: z.literal(RANDOM_USER_CONFIG.version),
     }),
   })
   .refine(
@@ -46,7 +77,10 @@ export function fetchPeopleSnapshot(): Promise<PeopleSnapshot> {
   if (!inFlight) {
     inFlight = loadSnapshot()
       .then((snapshot) => {
-        cached = { snapshot, expiresAt: Date.now() + 5 * 60_000 };
+        cached = {
+          snapshot,
+          expiresAt: Date.now() + RANDOM_USER_CONFIG.cacheTtlMs,
+        };
         return snapshot;
       })
       .finally(() => {
@@ -57,27 +91,33 @@ export function fetchPeopleSnapshot(): Promise<PeopleSnapshot> {
 }
 
 async function loadSnapshot(): Promise<PeopleSnapshot> {
-  const response = await fetch(
-    "https://randomuser.me/api/1.4/?results=5000&seed=northline&inc=name,gender,location,email,dob,registered,phone,nat,login",
-    {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(15000),
-      cache: "no-store",
-      redirect: "error",
-    },
+  const url = new URL(
+    `https://randomuser.me/api/${RANDOM_USER_CONFIG.version}/`,
   );
+  url.search = new URLSearchParams({
+    results: String(RANDOM_USER_CONFIG.results),
+    seed: RANDOM_USER_CONFIG.seed,
+    page: String(RANDOM_USER_CONFIG.page),
+    inc: RANDOM_USER_CONFIG.fields.join(","),
+  }).toString();
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(RANDOM_USER_CONFIG.timeoutMs),
+    cache: "no-store",
+    redirect: "error",
+  });
   if (!response.ok)
     throw new Error(`Random User returned HTTP ${response.status}.`);
   const parsed = batchSchema.safeParse(await response.json());
   if (!parsed.success)
     throw new Error(
-      "Random User must return a complete, valid seeded batch of 5,000 unique people.",
+      `Random User must return a complete, valid seeded batch of ${RANDOM_USER_CONFIG.results.toLocaleString("en-US")} unique people.`,
     );
   return {
     people: parsed.data.results,
     meta: {
       source: "randomuser",
-      label: "Random User · 5,000 generated profiles",
+      label: `Random User · ${RANDOM_USER_CONFIG.results.toLocaleString("en-US")} generated profiles`,
       fetchedAt: new Date().toISOString(),
     },
   };

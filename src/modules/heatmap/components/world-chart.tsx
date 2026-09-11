@@ -64,7 +64,7 @@ export default function WorldChart({
   };
   return (
     <div
-      className="relative h-[320px] sm:h-[520px]"
+      className="world-map-surface relative h-[320px] sm:h-[520px]"
       data-testid="world-map-panel"
     >
       {geometry.isPending ? (

@@ -1,6 +1,6 @@
 export {
-  registrationOption,
-  ageOption,
-  demographicOption,
-  countryOption,
+  timelineOption,
+  ageGroupsOption,
+  ageGenderOption,
+  geographyOption,
 } from "./options";

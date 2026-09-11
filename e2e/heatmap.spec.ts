@@ -4,6 +4,9 @@ import { buildPeoplePage } from "@/modules/people/server";
 import { peopleFixture } from "../tests/fixtures/people";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("https://randomuser.me/api/portraits/**", (route) =>
+    route.abort(),
+  );
   for (const endpoint of ["heatmap", "people"]) {
     await page.route(`**/api/${endpoint}?**`, async (route) => {
       try {
@@ -35,7 +38,7 @@ test("heatmap modes preserve the canvas and real cell clicks drill into matching
   });
   await page.goto("/heatmap?view=age");
   await expect(
-    page.getByRole("heading", { name: "People & geography", exact: true }),
+    page.getByRole("heading", { name: "Heatmap", exact: true }),
   ).toBeVisible();
   const chart = page.getByTestId("heatmap-chart");
   await expect(chart.locator("canvas").first()).toBeVisible();
@@ -164,13 +167,13 @@ test("heatmap stays inside the mobile viewport with a working horizontal scroll 
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(391);
-  const heading = await page
-    .getByRole("heading", { name: "People & geography", exact: true })
-    .boundingBox();
-  const badge = await page
-    .getByText("Random User · sample data", { exact: true })
-    .boundingBox();
-  expect(badge!.y).toBeGreaterThanOrEqual(heading!.y + heading!.height);
+  await expect(page.getByRole("contentinfo")).toContainText(
+    "Fictional profiles",
+  );
+  await expect(
+    page.getByRole("link", { name: "Random User documentation" }),
+  ).toHaveCount(1);
+  await expect(page.getByRole("main")).not.toContainText("Random User");
   const scroll = page.getByTestId("heatmap-scroll-area");
   const viewport = scroll.locator('[data-slot="scroll-area-viewport"]');
   await viewport.evaluate((element) => {

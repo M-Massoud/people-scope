@@ -20,10 +20,9 @@ export function comparisonOption(
     return `${age.label}: ${age.percentage.toFixed(1)}% (${age.count.toLocaleString("en-US")} people)`;
   };
   const base: ChartOption = {
-    animation: false,
+    animation: true,
     color: CHART_COLORS,
     textStyle: {
-      fontFamily: "IBM Plex Sans, sans-serif",
       fontSize: 11,
       color: "#67717e",
     },

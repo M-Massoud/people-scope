@@ -9,32 +9,32 @@ nextjs-portal {
 }
 
 :root {
-  --ink: #25323c;
+  --ink: #24334b;
   --muted: oklch(0.97 0 0);
-  --border: oklch(0.922 0 0);
-  --blue: #3d6997;
+  --border: #e2e8f0;
+  --blue: #386ee0;
   --background: oklch(1 0 0);
-  --foreground: #25323c;
+  --foreground: #24334b;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #3d6997;
+  --primary: #386ee0;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted-foreground: #69747b;
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: #edf3ff;
+  --accent-foreground: #2859bf;
   --destructive: oklch(0.577 0.245 27.325);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: #7699eb;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.5rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -46,7 +46,7 @@ nextjs-portal {
 }
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: "IBM Plex Sans", Arial, sans-serif;
+  --font-sans: var(--font-app), Arial, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -133,17 +133,21 @@ nextjs-portal {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-slot="skeleton"] {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
 
 @layer components {
   body {
     margin: 0;
-    background: #fafafa;
+    background: #f6f8fb;
     color: var(--ink);
-    font-family: "IBM Plex Sans", Arial, sans-serif;
+    font-family: var(--font-app), Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
   }
@@ -183,7 +187,7 @@ nextjs-portal {
     border-bottom: 1px solid var(--border);
   }
   .header-inner,
-  .app-header nav,
+  .header-navigation,
   .app-footer {
     max-width: 1240px;
     margin: auto;
@@ -203,10 +207,18 @@ nextjs-portal {
     font-weight: 600;
     letter-spacing: -0.6px;
   }
-  .wordmark svg {
-    color: var(--blue);
+  .brand-symbol {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 3px 8px #386ee020;
   }
-  .wordmark span {
+  .wordmark > span:last-child {
     font-size: 12px;
     font-weight: 400;
     letter-spacing: 0;
@@ -217,24 +229,36 @@ nextjs-portal {
   }
   .app-header nav {
     display: flex;
-    gap: 30px;
-    overflow-x: auto;
+    gap: 6px;
+    width: max-content;
+    min-width: 100%;
+    padding: 3px 3px 12px;
+  }
+  .header-navigation {
+    padding-bottom: 8px;
   }
   .app-header nav a {
+    flex-shrink: 0;
     white-space: nowrap;
-    display: block;
-    padding: 9px 0 14px;
-    border-bottom: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 13px;
+    border-radius: 8px;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
     color: var(--muted-foreground);
     font-size: 13px;
   }
   .app-header nav a[aria-current="page"] {
-    border-color: var(--blue);
-    color: var(--blue);
+    background: var(--accent);
+    color: var(--accent-foreground);
     font-weight: 500;
   }
   .app-header nav a:hover {
-    color: var(--ink);
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
   main {
     min-height: calc(100vh - 210px);
@@ -260,14 +284,6 @@ nextjs-portal {
     font-size: 13px;
     margin-top: 7px;
   }
-  .report-status {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    align-items: flex-end;
-    font-size: 11px;
-    color: var(--muted-foreground);
-  }
   .filter-panel {
     background: var(--card);
     border: 1px solid var(--border);
@@ -290,29 +306,121 @@ nextjs-portal {
   }
   .report-summary {
     display: grid;
-    grid-template-columns: 0.7fr 1fr 1.3fr;
-    gap: 28px;
-    padding: 24px 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 22px 0;
   }
-  .report-summary > div {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
+  .comparison-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .report-summary > div + div {
-    border-left: 1px solid var(--border);
-    padding-left: 28px;
+  .summary-card {
+    --stat-color: var(--primary);
+    --stat-surface: #f0f5ff;
+    min-width: 0;
+    min-height: 154px;
+    background-image: linear-gradient(
+      120deg,
+      var(--card) 55%,
+      var(--stat-surface)
+    );
   }
-  .report-summary span {
-    font-size: 12px;
-    color: var(--muted-foreground);
+  .summary-card[data-tone="teal"] {
+    --stat-color: #168b83;
+    --stat-surface: #ecf8f4;
   }
-  .report-summary strong {
-    font-size: 28px;
+  .summary-card[data-tone="amber"] {
+    --stat-color: #a5731f;
+    --stat-surface: #fff7e7;
+  }
+  .summary-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--stat-surface);
+    color: var(--stat-color);
+  }
+  .summary-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.75;
+  }
+  .summary-value {
+    display: block;
+    font-size: 32px;
     font-weight: 500;
     line-height: 1.2;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.4px;
+    letter-spacing: -0.8px;
+    color: var(--ink);
+  }
+  .summary-value small {
+    margin-left: 7px;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--muted-foreground);
+  }
+  .summary-detail {
+    margin-top: 7px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+  .report-page [data-slot="card"] {
+    box-shadow: 0 2px 5px #25323c04;
+  }
+  .report-page [data-state="selected"] {
+    background: var(--accent);
+  }
+  .report-page [data-slot="table-row"] {
+    transition: background-color 160ms ease;
+  }
+  .world-map-surface {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #f8fbff;
+    overflow: hidden;
+  }
+  .country-share-track {
+    height: 3px;
+    width: 64px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: var(--accent);
+    margin-top: 6px;
+  }
+  .country-share-track span {
+    display: block;
+    height: 100%;
+    background: var(--primary);
+    border-radius: inherit;
+    transition: width 220ms ease;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .page-heading {
+      animation: appear 220ms ease-out both;
+    }
+    .summary-card {
+      animation: appear 280ms ease-out both;
+    }
+    .summary-card:nth-child(2) {
+      animation-delay: 40ms;
+    }
+    .summary-card:nth-child(3) {
+      animation-delay: 80ms;
+    }
+  }
+  @keyframes appear {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   .report-grid {
     display: grid;
@@ -338,21 +446,9 @@ nextjs-portal {
   .heatmap-canvas .echart {
     height: 100%;
   }
-  .chart-note {
-    font-size: 11px;
-    color: var(--muted-foreground);
-    margin: 10px 0 8px;
-    max-width: 860px;
-    line-height: 1.6;
-  }
-  .provenance {
-    font-size: 11px;
-    color: var(--muted-foreground);
-    margin-top: 16px;
-    padding: 0 2px;
-  }
   .app-footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 20px;
     color: var(--muted-foreground);
@@ -370,13 +466,20 @@ nextjs-portal {
   }
   @media (max-width: 700px) {
     .header-inner,
-    .app-header nav,
+    .header-navigation,
     .app-footer {
       padding-left: 16px;
       padding-right: 16px;
     }
     .app-header nav {
-      gap: 22px;
+      gap: 4px;
+    }
+    .app-header nav a {
+      min-height: 44px;
+      padding: 10px 12px;
+    }
+    .wordmark {
+      font-size: 20px;
     }
     .report-page {
       padding: 24px 16px 28px;
@@ -387,13 +490,6 @@ nextjs-portal {
     }
     .page-heading h1 {
       font-size: 25px;
-    }
-    .report-status {
-      min-width: 100px;
-      font-size: 10px;
-    }
-    .report-status > span:last-child {
-      white-space: nowrap;
     }
     .filter-panel {
       padding: 15px 12px 11px;
@@ -409,17 +505,18 @@ nextjs-portal {
       display: none;
     }
     .report-summary {
-      grid-template-columns: 1fr 1.5fr;
-      gap: 20px 12px;
-      padding: 22px 2px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
     }
-    .report-summary > div + div {
-      padding-left: 16px;
+    .report-summary > :last-child:nth-child(odd) {
+      grid-column: 1 / -1;
     }
-    .report-summary > div:last-child {
-      grid-column: 1/-1;
-      border: 0;
-      padding: 0;
+    .summary-card {
+      --card-spacing: 14px;
+    }
+    .summary-value {
+      font-size: 28px;
     }
     .report-grid > [data-slot="card"] {
       --card-spacing: 16px;
@@ -432,6 +529,11 @@ nextjs-portal {
     }
     .app-footer {
       font-size: 10px;
+    }
+  }
+  @media (max-width: 480px) {
+    .wordmark > span:last-child {
+      display: none;
     }
   }
 }

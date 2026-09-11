@@ -1,3 +1,4 @@
+import { SummarySkeleton } from "@/components";
 import { Card, CardContent, CardHeader, Skeleton } from "@/components/ui";
 export function HeatmapSkeleton({
   view = "world",
@@ -11,14 +12,7 @@ export function HeatmapSkeleton({
       data-testid="heatmap-skeleton"
       className="flex flex-col gap-5"
     >
-      <div className="grid grid-cols-3 gap-4 py-6">
-        {[0, 1, 2].map((value) => (
-          <div key={value} className="flex flex-col gap-3">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-8 w-16" />
-          </div>
-        ))}
-      </div>
+      <SummarySkeleton />
       <div
         className={
           view === "world"

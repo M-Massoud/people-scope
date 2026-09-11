@@ -4,6 +4,9 @@ import { buildPeoplePage } from "@/modules/people/server";
 import { peopleFixture } from "../tests/fixtures/people";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("https://randomuser.me/api/portraits/**", (route) =>
+    route.abort(),
+  );
   for (const endpoint of ["heatmap", "people"]) {
     await page.route(`**/api/${endpoint}?**`, async (route) => {
       const params = new URL(route.request().url()).searchParams;
