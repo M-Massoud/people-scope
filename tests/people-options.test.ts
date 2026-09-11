@@ -5,8 +5,8 @@ import {
   countryOption,
   demographicOption,
   registrationOption,
-} from "../src/components/charts/people-options";
-import type { AgeRow } from "../src/lib/people-types";
+} from "@/modules/reports/charts";
+import type { AgeRow } from "@/modules/reports";
 
 const ages: AgeRow[] = [
   {

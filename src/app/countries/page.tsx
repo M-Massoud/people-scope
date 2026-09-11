@@ -1,4 +1,4 @@
-import { ReportPage } from "@/components/reports/report-page";
+import { ReportPage } from "@/modules/reports";
 export default function Page() {
   return <ReportPage kind="countries" />;
 }

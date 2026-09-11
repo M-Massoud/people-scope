@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { peopleFixture } from "../tests/fixtures/people";
-import {
-  buildPeopleReport,
-  buildPeoplePage,
-} from "../src/server/people-service";
+import { buildPeopleReport } from "@/modules/reports/server";
+import { buildPeoplePage } from "@/modules/people/server";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/reports?**", async (route) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCountryComparison } from "../src/server/people-service";
+import { buildCountryComparison } from "@/modules/comparison/server";
 import { peopleFixture } from "./fixtures/people";
 
 describe("country age comparison", () => {

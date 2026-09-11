@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Users } from "lucide-react";
-import type { PeopleReportKind } from "@/lib/people-types";
-type PageKind = PeopleReportKind | "comparison";
-const pages: { id: PageKind; href: string; name: string }[] = [
+const pages = [
   { id: "registrations", href: "/", name: "Registrations" },
   { id: "ages", href: "/ages", name: "Age groups" },
   { id: "demographics", href: "/demographics", name: "Demographics" },
   { id: "countries", href: "/countries", name: "Geography" },
   { id: "comparison", href: "/comparison", name: "Compare countries" },
-];
+] as const;
+type PageKind = (typeof pages)[number]["id"];
+
 export function Shell({
   children,
   active,

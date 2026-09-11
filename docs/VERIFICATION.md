@@ -34,3 +34,15 @@ Removed obsolete revenue/market/lab styles and consolidated the current layout r
 Scripts now use `next dev`, `next build --webpack`, and `next start`; the README uses plain `npm run build`. The canvas-preservation test checks the original DOM element directly instead of relying on production debug counters.
 
 After cleanup, all 67 unit tests, all 17 browser tests, the production build, and TypeScript with `--noUnusedLocals --noUnusedParameters` passed. An import-graph scan found no unreachable source files. Before/after measurements of the shell, filters, cards, charts, and text styling matched across all five pages at 1440px and 390px widths. Live browser checks reported no errors.
+
+## Feature module refactor
+
+Organized the application into `people`, `reports`, and `comparison` modules with explicit public indexes and separate server entry points. Split the original service into shared profile filtering/pagination, report aggregation, and comparison calculations. Moved each feature's types, hooks, components, and chart options alongside it. Shared form fields and chart rendering remain outside the modules.
+
+After the refactor, all 67 unit tests, all 17 browser tests, the production build, and TypeScript with `--noUnusedLocals --noUnusedParameters` passed. A runtime import-graph check across 67 source files found no cycles, no client-to-server dependencies, and no shared-component dependencies on feature modules. Cross-module imports resolve through public indexes. Existing routes, API contracts, chart loading, and interaction behavior are preserved.
+
+## Consistent public imports
+
+Added named public exports for shared UI, the app shell/query provider, utilities, feature hooks, feature components, and chart configuration. Consumers import from folder indexes; sibling implementations keep direct imports. Shared chart exports include only colors and types, preserving the renderer's lazy loading. Duplicate imports were consolidated.
+
+After this import cleanup, the production build, TypeScript with unused-code checks, all 67 unit tests, and all 17 browser tests passed. The runtime import-graph check covered 78 source files with no cycles or browser-to-server imports.

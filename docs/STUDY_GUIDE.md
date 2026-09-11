@@ -68,7 +68,7 @@ This page uses all ages, genders, and registration dates. Its country selections
 
 ## Where do continents come from?
 
-Random User supplies the country, but not the continent. `src/lib/geography.ts` contains a small country-to-continent lookup for the provider's supported countries. Germany and France map to Europe, for example. We add their existing counts together to draw the continent doughnut. This is a geographic grouping, not an invented user attribute.
+Random User supplies the country, but not the continent. `src/modules/people/geography.ts` contains a small country-to-continent lookup for the provider's supported countries. Germany and France map to Europe, for example. We add their existing counts together to draw the continent doughnut. This is a geographic grouping, not an invented user attribute.
 
 The lookup follows [UN geographic regions](https://unstats.un.org/unsd/methodology/m49/), splitting the Americas into North and South America. Turkey is grouped in Asia, Mexico in North America, and Australia/New Zealand in Oceania. An unexpected country remains counted under Unmapped until the lookup is extended.
 

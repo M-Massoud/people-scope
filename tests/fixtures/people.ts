@@ -1,4 +1,4 @@
-import type { Person, PeopleSnapshot } from "../../src/lib/people-types";
+import type { Person, PeopleSnapshot } from "@/modules/people";
 
 // Offline test data only. Production always reads the validated Random User API.
 export function fixturePerson(

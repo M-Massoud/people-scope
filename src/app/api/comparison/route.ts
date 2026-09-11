@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getCountryComparison,
-  InvalidFiltersError,
-} from "@/server/people-service";
+import { getCountryComparison } from "@/modules/comparison/server";
+import { InvalidFiltersError } from "@/modules/people/server";
 
 export const dynamic = "force-dynamic";
 

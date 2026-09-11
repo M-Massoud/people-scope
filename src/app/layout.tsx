@@ -3,7 +3,7 @@ import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
 import "./globals.css";
-import { QueryProvider } from "@/components/query-provider";
+import { QueryProvider } from "@/components";
 
 export const metadata: Metadata = {
   title: "PeopleScope · People analytics",

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { peopleFixture } from "../tests/fixtures/people";
-import { buildCountryComparison } from "../src/server/people-service";
+import { buildCountryComparison } from "@/modules/comparison/server";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/comparison?**", async (route) => {

@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { continentForCountry, groupByContinent } from "../src/lib/geography";
-import {
-  buildPeoplePage,
-  buildPeopleReport,
-} from "../src/server/people-service";
+import { continentForCountry, groupByContinent } from "@/modules/people";
+import { buildPeoplePage } from "@/modules/people/server";
+import { buildPeopleReport } from "@/modules/reports/server";
 import { peopleFixture } from "./fixtures/people";
 
 describe("continent grouping", () => {

@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  InvalidFiltersError,
-  getPeoplePage,
-} from "../../../server/people-service";
+import { InvalidFiltersError, getPeoplePage } from "@/modules/people/server";
 
 export const dynamic = "force-dynamic";
 

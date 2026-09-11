@@ -2,12 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET as getReportRoute } from "../src/app/api/reports/route";
 import { GET as getPeopleRoute } from "../src/app/api/people/route";
-import type { PeopleSnapshot } from "../src/lib/people-types";
-import {
-  InvalidFiltersError,
-  buildPeoplePage,
-  buildPeopleReport,
-} from "../src/server/people-service";
+import type { PeopleSnapshot } from "@/modules/people";
+import { InvalidFiltersError, buildPeoplePage } from "@/modules/people/server";
+import { buildPeopleReport } from "@/modules/reports/server";
 import { fixturePerson, peopleFixture } from "./fixtures/people";
 
 const snapshot: PeopleSnapshot = {

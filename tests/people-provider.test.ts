@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fixturePerson } from "./fixtures/people";
 
-let fetchPeopleSnapshot: (typeof import("../src/server/people-provider"))["fetchPeopleSnapshot"];
+let fetchPeopleSnapshot: (typeof import("@/modules/people/server/provider"))["fetchPeopleSnapshot"];
 beforeEach(async () => {
   vi.resetModules();
-  fetchPeopleSnapshot = (await import("../src/server/people-provider"))
+  fetchPeopleSnapshot = (await import("@/modules/people/server/provider"))
     .fetchPeopleSnapshot;
 });
 afterEach(() => {

@@ -49,16 +49,29 @@ The application uses **API-generated test people**, not actual customers. Regist
 
 Next.js / React / TypeScript, shadcn/ui (Base UI), Tailwind, Apache ECharts, React Query, Zod, Vitest, Playwright.
 
+## Architecture
+
+The app is organized by feature. Next.js pages and API routes are small entry points into these modules:
+
+| Module | Responsibility |
+| --- | --- |
+| `src/modules/people` | Profile types, Random User provider/cache, common filters, search/pagination, and People explorer |
+| `src/modules/reports` | Registration, age, demographic, and geography dashboards; report filters, queries, chart options, and aggregates |
+| `src/modules/comparison` | Country comparison page, query, chart options, and age percentages |
+
+Each module exposes named exports through `index.ts`. Server functions have a separate `server/index.ts`; browser code never imports those entry points. Shared shadcn UI, form fields, the app shell, and the lazy-loaded ECharts renderer stay under `src/components`. Generic HTTP and URL helpers stay under `src/lib`.
+
 ## Read the code
 
-1. `src/server/people-provider.ts`: external request, validation, batch cache.
-2. `src/server/people-service.ts`: filtering, aggregation, sorting, pagination.
-3. `src/lib/use-report-view.ts`: URL state and browser requests.
-4. `src/components/reports/report-page.tsx`: chart/report composition.
-5. `src/components/reports/people-explorer.tsx`: searchable table and details.
-6. `src/components/charts/echart.tsx`: persistent chart lifecycle.
+1. `src/modules/people/server/provider.ts`: external request, validation, batch cache.
+2. `src/modules/people/server/filters.ts`: shared filter validation and record selection.
+3. `src/modules/reports/server/service.ts`: chart totals and summaries.
+4. `src/modules/reports/hooks/use-report-view.ts`: URL state and browser requests.
+5. `src/modules/reports/components/report-page.tsx`: chart/report composition.
+6. `src/modules/people/components/people-explorer.tsx`: searchable table and details.
+7. `src/components/charts/echart.tsx`: persistent chart lifecycle.
 
-[Simple study guide](docs/STUDY_GUIDE.md) · [API contract](docs/API.md) · [Data source](docs/RANDOMUSER.md) · [Interview walkthrough](docs/INTERVIEW.md) · [Verification](docs/VERIFICATION.md)
+[Architecture walkthrough](docs/ARCHITECTURE.md) · [Simple study guide](docs/STUDY_GUIDE.md) · [API contract](docs/API.md) · [Data source](docs/RANDOMUSER.md) · [Interview walkthrough](docs/INTERVIEW.md) · [Verification](docs/VERIFICATION.md)
 
 ## Verify
 

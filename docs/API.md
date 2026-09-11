@@ -20,7 +20,7 @@ All are read-only Next.js route handlers and use the same Random User provider. 
 
 Country choices come from the full loaded batch. Dates must be valid and ordered, between 1900 and 2100.
 
-Continent filtering uses `location.country` through the lookup in `src/lib/geography.ts`. `/api/reports` continues returning country rows; the Geography page sums them by continent. `geography=continent|country` only chooses the browser chart/table view and does not change the API request. Zero-count continents are not added to the doughnut.
+Continent filtering uses `location.country` through the lookup in `src/modules/people/geography.ts`. `/api/reports` continues returning country rows; the Geography page sums them by continent. `geography=continent|country` only chooses the browser chart/table view and does not change the API request. Zero-count continents are not added to the doughnut.
 
 `/api/reports` also accepts `grouping=year` (default) or `grouping=month`. Empty timeline periods are retained as zero counts. Buckets are clipped to selected date boundaries.
 
@@ -41,7 +41,7 @@ The comparison uses all profiles in each chosen country, regardless of report fi
 
 ## Records
 
-`src/lib/people-types.ts` describes the selected API fields. The nested shapes are preserved: `name.first`, `location.country`, `dob.age`, `registered.date`, `login.uuid`, etc. Only UUID is retained from login; passwords and hashes are stripped during validation.
+`src/modules/people/types.ts` describes the selected API fields. The nested shapes are preserved: `name.first`, `location.country`, `dob.age`, `registered.date`, `login.uuid`, etc. Only UUID is retained from login; passwords and hashes are stripped during validation.
 
 Totals count matching records. Average age uses supplied ages and is null for an empty selection. Country count means distinct countries in that selection. Age buckets are 0–17, 18–24, 25–34, 35–44, 45–54, 55–64, 65–74, and 75+. Country rows contain positive counts, ordered by count descending, then name.
 
