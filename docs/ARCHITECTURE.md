@@ -1,6 +1,6 @@
 # PeopleScope architecture
 
-PeopleScope is one Next.js application organized into three feature modules. A module keeps the code for one responsibility together: its types, components, hooks, and server calculations.
+PeopleScope is one Next.js application organized into four feature modules. A module keeps the code for one responsibility together: its types, components, hooks, and server calculations.
 
 ```text
 src/
@@ -11,7 +11,7 @@ src/
 │   │   ├── types.ts
 │   │   ├── constants.ts
 │   │   ├── geography.ts
-│   │   ├── components/        People explorer and its public index
+│   │   ├── components/        People explorer and public index
 │   │   ├── hooks/             Paginated people query and public index
 │   │   └── server/            Provider, filtering, pagination, public index
 │   ├── reports/               Four dashboard views
@@ -22,16 +22,23 @@ src/
 │   │   ├── hooks/             Report query, URL state, public index
 │   │   ├── charts/            Report chart options and public index
 │   │   └── server/            Report calculations and public index
-│   └── comparison/            Country comparison
-│       ├── index.ts           ComparisonPage and comparison types
+│   ├── comparison/            Country comparison
+│   │   ├── index.ts           ComparisonPage and comparison types
+│   │   ├── types.ts
+│   │   ├── components/        Comparison page and public index
+│   │   ├── hooks/             Comparison query and public index
+│   │   ├── charts/            Radar/bar options and public index
+│   │   └── server/            Country age percentages and public index
+│   └── heatmap/               Country × age matrix
+│       ├── index.ts           HeatmapPage and public types
 │       ├── types.ts
-│       ├── components/        Comparison page and public index
-│       ├── hooks/             Comparison query and public index
-│       ├── charts/            Radar/bar options and public index
-│       └── server/            Country age percentages and public index
+│       ├── components/        Page, chart/table panel, skeleton, public index
+│       ├── hooks/             Matrix query and public index
+│       ├── charts/            Heatmap options, sorting, scale, public index
+│       └── server/            Filtered country/age cells and public index
 ├── components/
 │   ├── index.ts               Shell and QueryProvider exports
-│   ├── ui/                    shadcn primitives and their public index
+│   ├── ui/                    shadcn primitives and public index
 │   ├── form-fields/           Shared labeled select and date picker
 │   ├── charts/                ECharts renderer, registration, shared colors
 │   ├── shell.tsx              Navigation and page frame
@@ -41,7 +48,7 @@ src/
 
 ## How modules connect
 
-The reports and comparison modules depend on the people module. People does not depend on either of them. Reports and comparison do not import each other. Shared components and generic helpers do not depend on feature modules.
+The reports, comparison, and heatmap modules depend on the people module. People does not depend on its consuming modules. The three visualization modules do not import each other. Shared components and generic helpers do not depend on feature modules.
 
 Pages import a module's public entry point:
 
@@ -112,6 +119,7 @@ The people endpoint applies the same filters, then searches, sorts, and paginate
 - Add a shared profile field or filtering rule in `people`.
 - Add a dashboard view or aggregation in `reports`.
 - Change country comparison behavior in `comparison`.
+- Change the country/age matrix, sorting, or cell selection in `heatmap`.
 - Put reusable visual controls in `components`.
 - Keep route files focused on HTTP requests, responses, and status codes.
 
@@ -120,3 +128,5 @@ Types describe the JSON contracts. Zod validates the external profiles at runtim
 ## Validation
 
 Unit tests cover provider validation/cache behavior, filtering, report aggregates, pagination, chart configuration, and comparison percentages. Playwright tests exercise the pages using API-shaped fixtures. The production application continues to request fictional profiles from Random User; this refactor does not introduce mock data or change the API URLs.
+
+The heatmap module now includes `world-panel.tsx`, the dynamically loaded `world-chart.tsx`, and pure `world-options.ts`. The world renderer registers ECharts MapChart only when loaded, fetches local Natural Earth geometry from `public/maps/world.json`, and reuses the shared Canvas component. Both geographic views share `/api/heatmap`; its server aggregation adds exact average ages and supports the `band` filter. No new runtime dependency was added.

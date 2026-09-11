@@ -5,6 +5,7 @@ import { init, type ChartOption, type EChartsType } from "./echarts";
 export type ChartSelection = {
   dataIndex: number;
   seriesName?: string;
+  name?: string;
 };
 
 type Props = {
@@ -12,12 +13,14 @@ type Props = {
   label: string;
   testId?: string;
   onSelect?: (selection: ChartSelection) => void;
+  onReady?: (instance: EChartsType) => void;
 };
 
-function EChart({ option, label, testId, onSelect }: Props) {
+function EChart({ option, label, testId, onSelect, onReady }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const chart = useRef<EChartsType | null>(null);
   const selectionHandler = useRef(onSelect);
+  const readyHandler = useRef(onReady);
   const selectable = Boolean(onSelect);
 
   useEffect(() => {
@@ -35,6 +38,7 @@ function EChart({ option, label, testId, onSelect }: Props) {
       selectionHandler.current?.({
         dataIndex: selection.dataIndex,
         seriesName: selection.seriesName,
+        name: selection.name,
       });
     };
     instance.on("click", { componentType: "series" }, handleClick);
@@ -44,6 +48,7 @@ function EChart({ option, label, testId, onSelect }: Props) {
       frame = requestAnimationFrame(() => instance.resize());
     });
     observer.observe(element);
+    readyHandler.current?.(instance);
     return () => {
       cancelAnimationFrame(frame);
       observer.disconnect();

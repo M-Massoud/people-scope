@@ -333,7 +333,9 @@ nextjs-portal {
     min-width: 0;
   }
   .report-chart-content .chart-wrapper,
-  .report-chart-content .echart {
+  .report-chart-content .echart,
+  .heatmap-canvas .chart-wrapper,
+  .heatmap-canvas .echart {
     height: 100%;
   }
   .chart-note {

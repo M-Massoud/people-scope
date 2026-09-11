@@ -9,12 +9,15 @@ One Next.js application that fetches 5,000 fictional profiles from Random User a
 | `/demographics` | Male/female counts within age groups |
 | `/countries` | Geography doughnut: continents by default, with a Countries view |
 | `/comparison` | Two countries' age distributions, as bars or radar |
+| `/heatmap` | World map and country × age matrix with counts, within-country percentages, and cell drilldown |
 
 Global filters: country, gender, age range, and registration dates. Edit the controls, then choose Apply filters. Filters live in the URL and survive navigation, refresh and Back. Click a chart or its table alternative to inspect matching people. The explorer searches, sorts, paginates, and opens a shadcn details Sheet.
 
 Compare countries has two immediate country selectors and Bar / Radar views. It uses all profiles in each country, with age-group percentages calculated against that country's own sample total. Both views share one scale and an exact-values table. Copy view link preserves the comparison.
 
 Continent is derived from `location.country` using a small documented geographic lookup. It is not an extra field supplied by Random User. Clicking a continent filters reports and the people explorer; remove its filter chip to return to all continents.
+
+The heatmap page offers an interactive world map and a country-by-age matrix. Color countries by user count or average age, or compare age groups using counts and within-country percentages. Both views share continent, gender, and age-group filters. Select a country, matrix cell, or keyboard-accessible table value to explore matching profiles. Display changes and selections reuse the current response. The world map loads public-domain Natural Earth boundaries locally and supports zooming, panning, and resetting the view.
 
 ## Run
 
@@ -41,7 +44,7 @@ Browser → our Next.js API → Random User (or five-minute cache)
 Browser ← chart summaries or one page of people
 ```
 
-`/api/reports` returns chart aggregates. `/api/people` returns 25 records by default. `/api/comparison` returns two countries' age-group counts and percentages. All use the same validated batch, with concurrent upstream requests shared. The browser never needs all 5,000 records to render a chart.
+`/api/reports` returns chart aggregates. `/api/people` returns 25 records by default. `/api/comparison` returns two countries' age-group counts and percentages. `/api/heatmap` returns country counts, average ages, and the country/age matrix. All use the same validated batch, with concurrent upstream requests shared. The browser never needs all 5,000 records to render a chart.
 
 The application uses **API-generated test people**, not actual customers. Registration dates and ages come from the API. They are not sign-ups to this app, and ages are not recalculated using today's date. The default view includes the full available registration period. Country shares describe this sample, not population statistics.
 
@@ -58,6 +61,7 @@ The app is organized by feature. Next.js pages and API routes are small entry po
 | `src/modules/people` | Profile types, Random User provider/cache, common filters, search/pagination, and People explorer |
 | `src/modules/reports` | Registration, age, demographic, and geography dashboards; report filters, queries, chart options, and aggregates |
 | `src/modules/comparison` | Country comparison page, query, chart options, and age percentages |
+| `src/modules/heatmap` | Interactive world map, country/age matrix, aggregation, filtering, and profile drilldown |
 
 Each module exposes named exports through `index.ts`. Server functions have a separate `server/index.ts`; browser code never imports those entry points. Shared shadcn UI, form fields, the app shell, and the lazy-loaded ECharts renderer stay under `src/components`. Generic HTTP and URL helpers stay under `src/lib`.
 

@@ -5,6 +5,7 @@
 - `GET /api/reports`: filters, available period/countries, provenance, metrics, timeline rows, age/gender counts, country counts. No raw people collection.
 - `GET /api/people`: `items`, `total`, `page`, `pageSize`, `pageCount`.
 - `GET /api/comparison`: `availableCountries`, `meta`, and two `groups`, each with `country`, `total`, and `ages` containing `key`, `label`, `count`, and `percentage`.
+- `GET /api/heatmap`: `meta`, applied `filters`, `totalPeople`, `ageGroups`, and country `rows` with `total` and age-ordered `cells` containing `count` and `percentage`.
 
 All are read-only Next.js route handlers and use the same Random User provider. All return no-store responses; the provider has its own in-memory batch cache. Invalid input returns 400; provider failures return 502. No local dataset is substituted.
 
@@ -39,6 +40,12 @@ Example: `/api/people?country=Canada&ageMin=25&ageMax=34&pageSize=25`.
 
 The comparison uses all profiles in each chosen country, regardless of report filters. Each percentage is `age group count / country total * 100`, without server-side rounding. The page rounds displayed values to one decimal place. `view=bar|radar` is browser state only and does not affect the API request.
 
+## Heatmap parameters
+
+`/api/heatmap?continent=Europe&gender=female` filters profiles before calculating country totals and age-group percentages. Only `continent` and `gender` affect the matrix; all registration dates and age groups are included. Unknown query keys are ignored. Country rows are returned alphabetically. Cells with zero people remain present, and each nonempty country row totals 100% before display rounding. No matching profiles returns `rows: []` and `totalPeople: 0`.
+
+The page's `metric=share|count`, `order=name|size|older`, and `display=chart|table` parameters are browser-only display state. A selected cell adds `country`, `ageMin`, `ageMax`, and `explore=1`; those parameters filter `/api/people` without narrowing or refetching the matrix. Changing continent or gender clears that selection and its search/page state. Each country's percentages use the filtered country total, never the global sample size.
+
 ## Records
 
 `src/modules/people/types.ts` describes the selected API fields. The nested shapes are preserved: `name.first`, `location.country`, `dob.age`, `registered.date`, `login.uuid`, etc. Only UUID is retained from login; passwords and hashes are stripped during validation.
@@ -48,3 +55,5 @@ Totals count matching records. Average age uses supplied ages and is null for an
 ## Limitations
 
 Profiles are API-generated test data. No authentication or tenant isolation is implemented. The server processes a fixed 5,000-record batch in memory; this is a practice project, not a production customer directory.
+
+World-map extension: `/api/heatmap` accepts `band` (for example `18-24`, `75-120`, or `all`). Each country row also includes `averageAge`, computed from filtered profile ages. `view`, `color`, and `order` are display-only; `country`, `ageMin`, and `ageMax` remain explorer selections and do not filter the aggregate.

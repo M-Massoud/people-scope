@@ -46,3 +46,20 @@ After the refactor, all 67 unit tests, all 17 browser tests, the production buil
 Added named public exports for shared UI, the app shell/query provider, utilities, feature hooks, feature components, and chart configuration. Consumers import from folder indexes; sibling implementations keep direct imports. Shared chart exports include only colors and types, preserving the renderer's lazy loading. Duplicate imports were consolidated.
 
 After this import cleanup, the production build, TypeScript with unused-code checks, all 67 unit tests, and all 17 browser tests passed. The runtime import-graph check covered 78 source files with no cycles or browser-to-server imports.
+
+## Country and age heatmap
+
+Added `/heatmap` and `/api/heatmap` in a separate feature module. The matrix supports within-country percentages, raw counts, continent/gender filters, three row orderings, URL state, accessible table selection, and profile drilldown through the existing explorer.
+
+The production build, all 77 unit tests, and all 22 browser tests passed. New checks cover country-specific denominators, age boundaries, empty results, invalid filters, upstream failures, color-value dimensions, sorting, canvas reuse, actual heatmap cell clicks, keyboard selection, Back/reload behavior, reset/retry, unavailable selected groups, and mobile scrolling/header layout. The import-graph check covered 92 source files without cycles or browser-to-server imports.
+
+The live development page loaded 5,000 profiles across 21 countries and eight age bands. Desktop and mobile test screenshots were visually inspected; a mobile title/badge overlap was corrected and covered by a geometry assertion. Test screenshots use the smaller offline fixture; production continues to use Random User.
+
+## World-map extension — 2026-09-11
+
+- Production build passed; TypeScript with unused-local/parameter checks passed.
+- 81 unit tests passed, including exact mean age, age-filter aggregation, map series values, and coverage of all 21 supported country names in Natural Earth boundaries.
+- Full 25-test browser suite passed before the final proportional-layout refinement. The 8 existing geography tests passed after loading/layout updates, and the final 4 world-map tests passed after the refinement, including a direct Canada canvas click (26 distinct browser tests covered overall).
+- Map checks cover keyboard country selection, accurate explorer filtering, refresh/Back, canvas preservation, lazy boundary loading, boundary-fetch retry, and mobile overflow.
+- Inspected desktop/mobile screenshots and the live 5,000-profile view. Both visualization panels align at desktop widths; the map keeps its geographic proportions on mobile.
+- Module-boundary check passed for 95 source files; no new runtime dependency.

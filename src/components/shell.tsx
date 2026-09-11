@@ -6,6 +6,7 @@ const pages = [
   { id: "demographics", href: "/demographics", name: "Demographics" },
   { id: "countries", href: "/countries", name: "Geography" },
   { id: "comparison", href: "/comparison", name: "Compare countries" },
+  { id: "heatmap", href: "/heatmap", name: "Heatmap" },
 ] as const;
 type PageKind = (typeof pages)[number]["id"];
 
@@ -36,7 +37,9 @@ export function Shell({
               key={page.id}
               href={
                 page.href +
-                (queryString && page.id !== "comparison"
+                (queryString &&
+                page.id !== "comparison" &&
+                page.id !== "heatmap"
                   ? `?${queryString}`
                   : "")
               }
