@@ -1,14 +1,14 @@
 "use client";
 import { PAGES } from "@/config";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Link as LinkIcon, MapPin } from "lucide-react";
-import { patchParams } from "@/lib";
+import { MapPin } from "lucide-react";
+import { selectParams, updateUrlParams } from "@/lib";
 import { useCountryComparison } from "../hooks";
-import { Shell, SummaryCard } from "@/components";
-import { LabeledSelect } from "@/components/form-fields";
+import { CopyViewLink, RequestError, Shell, SummaryCard } from "@/components";
+import { LabeledSelect, SingleChoiceToggle } from "@/components/form-fields";
 import {
   Alert,
   AlertDescription,
@@ -32,8 +32,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@/components/ui";
 import { comparisonOption, comparisonScale } from "../charts";
 
@@ -90,17 +88,11 @@ function ComparisonContent() {
   const params = useSearchParams();
   const view = params.get("view") === "bar" ? "bar" : "radar";
   const EChart = view === "bar" ? BarChart : RadarChart;
-  const [copyMessage, setCopyMessage] = useState("");
   const query = useCountryComparison(params.toString());
   const data = query.data;
   const countryA = params.get("countryA") ?? data?.groups[0]?.country ?? "";
   const countryB = params.get("countryB") ?? data?.groups[1]?.country ?? "";
-  const update = (patch: Record<string, string>) => {
-    const url = new URL(window.location.href);
-    url.search = patchParams(url.searchParams, patch).toString();
-    window.history.pushState(null, "", url);
-    setCopyMessage("");
-  };
+  const update = updateUrlParams;
   const reset = () =>
     window.history.pushState(null, "", PAGES["compare-countries"].href);
   const option = useMemo(
@@ -145,57 +137,37 @@ function ComparisonContent() {
                 All ages, genders, and registration dates. Selections apply
                 immediately.
               </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const url = new URL(window.location.href);
-                    url.search = new URLSearchParams({
-                      countryA,
-                      countryB,
-                      view,
-                    }).toString();
-                    await navigator.clipboard.writeText(url.toString());
-                    setCopyMessage("Link copied");
-                  } catch {
-                    setCopyMessage(
-                      "Copy the browser address to share this view.",
-                    );
-                  }
+              <CopyViewLink
+                viewKey={`${countryA}|${countryB}|${view}?${params.toString()}`}
+                getUrl={() => {
+                  const url = new URL(window.location.href);
+                  url.search = new URLSearchParams({
+                    countryA,
+                    countryB,
+                    view,
+                  }).toString();
+                  return url.toString();
                 }}
-              >
-                <LinkIcon data-icon="inline-start" />
-                Copy view link
-              </Button>
+              />
             </div>
-            {copyMessage && (
-              <p className="mt-2 text-xs text-muted-foreground" role="status">
-                {copyMessage}
-              </p>
-            )}
           </div>
         )}
-        {query.isError && (
-          <Alert variant="destructive" className="mb-5">
-            <AlertDescription>
-              <p>{query.error.message}</p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void query.refetch()}
-                >
-                  Try again
-                </Button>
-                <Button variant="ghost" size="sm" onClick={reset}>
-                  Reset comparison
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-        {query.isPending && <ComparisonSkeleton />}
+        <RequestError
+          key={selectParams(new URLSearchParams(params.toString()), [
+            "countryA",
+            "countryB",
+          ])}
+          message={query.error?.message}
+          retrying={query.isFetching}
+          onRetry={() => void query.refetch()}
+          fallback={query.isPending ? <ComparisonSkeleton /> : null}
+          className="mb-5"
+          actions={
+            <Button variant="ghost" size="sm" onClick={reset}>
+              Reset comparison
+            </Button>
+          }
+        />
         {query.isFetching && data && !query.isError && (
           <Alert role="status" className="mb-5">
             <AlertDescription>
@@ -244,18 +216,16 @@ function ComparisonContent() {
                         {comparisonScale(data.groups)}%
                       </CardDescription>
                     </div>
-                    <ToggleGroup
-                      aria-label="Chart view"
-                      size="sm"
+                    <SingleChoiceToggle
+                      label="Chart view"
                       spacing={1}
-                      value={[view]}
-                      onValueChange={(values) => {
-                        if (values.length) update({ view: values[0] });
-                      }}
-                    >
-                      <ToggleGroupItem value="bar">Bar</ToggleGroupItem>
-                      <ToggleGroupItem value="radar">Radar</ToggleGroupItem>
-                    </ToggleGroup>
+                      value={view}
+                      options={[
+                        { value: "bar", label: "Bar" },
+                        { value: "radar", label: "Radar" },
+                      ]}
+                      onChange={(view) => update({ view })}
+                    />
                   </div>
                 </CardHeader>
                 <CardContent className="report-chart-content min-h-0 flex-1">

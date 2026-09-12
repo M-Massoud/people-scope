@@ -1,10 +1,10 @@
 "use client";
 import { PAGES } from "@/config";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Link as LinkIcon, X, Users, Globe2, CalendarDays } from "lucide-react";
-import { Shell, SummaryCard } from "@/components";
-import { LabeledSelect } from "@/components/form-fields";
+import { X, Users, Globe2, CalendarDays } from "lucide-react";
+import { CopyViewLink, RequestError, Shell, SummaryCard } from "@/components";
+import { LabeledSelect, SingleChoiceToggle } from "@/components/form-fields";
 import {
   Alert,
   AlertDescription,
@@ -14,12 +14,10 @@ import {
   EmptyHeader,
   EmptyTitle,
   FieldGroup,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@/components/ui";
 import { CONTINENTS, PEOPLE_KEYS, ageBands } from "@/modules/people";
 import { PeopleExplorer } from "@/modules/people/components";
-import { patchParams, selectParams } from "@/lib";
+import { selectParams, updateUrlParams } from "@/lib";
 import { sortHeatmapRows } from "../charts";
 import { useHeatmap } from "../hooks";
 import type {
@@ -70,7 +68,6 @@ function HeatmapContent() {
         ? "older"
         : "name";
   const display = params.get("display") === "table" ? "table" : "chart";
-  const [copyMessage, setCopyMessage] = useState("");
   const rows = useMemo(
     () => sortHeatmapRows(data?.rows ?? [], order),
     [data, order],
@@ -88,12 +85,8 @@ function HeatmapContent() {
   const selectedCell =
     row && group && data ? row.cells[data.ageGroups.indexOf(group)] : undefined;
   const ready = data && !query.isError;
-  const update = (patch: Record<string, string | null>, replace = false) => {
-    const url = new URL(window.location.href);
-    url.search = patchParams(url.searchParams, { view, ...patch }).toString();
-    window.history[replace ? "replaceState" : "pushState"](null, "", url);
-    setCopyMessage("");
-  };
+  const update = (patch: Record<string, string | null>, replace = false) =>
+    updateUrlParams({ view, ...patch }, replace);
   const clearSelection = {
     country: null,
     ageMin: null,
@@ -183,9 +176,9 @@ function HeatmapContent() {
               value={params.get("band") ?? "all"}
               items={[
                 { value: "all", label: "All ages" },
-                ...ageBands.map(([min, max]) => ({
-                  value: `${min}-${max}`,
-                  label: min === 75 ? "75+ years" : `${min}–${max} years`,
+                ...ageBands.map((band) => ({
+                  value: band.filterValue,
+                  label: `${band.label} years`,
                 })),
               ]}
               onChange={(band) => filter({ band })}
@@ -212,66 +205,36 @@ function HeatmapContent() {
                 size="sm"
                 onClick={() => {
                   window.history.pushState(null, "", "/heatmap");
-                  setCopyMessage("");
                 }}
               >
                 Reset heatmap
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(window.location.href);
-                    setCopyMessage("Link copied");
-                  } catch {
-                    setCopyMessage(
-                      "Copy the browser address to share this view.",
-                    );
-                  }
-                }}
-              >
-                <LinkIcon data-icon="inline-start" />
-                Copy view link
-              </Button>
+              <CopyViewLink viewKey={params.toString()} />
             </div>
           </div>
-          {copyMessage && (
-            <p role="status" className="mt-2 text-xs text-muted-foreground">
-              {copyMessage}
-            </p>
-          )}
         </div>
         <div className="my-5">
-          <ToggleGroup
-            aria-label="Geography view"
+          <SingleChoiceToggle
+            label="Geography view"
             variant="outline"
-            size="sm"
             spacing={0}
-            value={[view]}
-            onValueChange={(values) => {
-              if (values.length) update({ ...clearSelection, view: values[0] });
-            }}
-          >
-            <ToggleGroupItem value="world">World map</ToggleGroupItem>
-            <ToggleGroupItem value="age">Age heatmap</ToggleGroupItem>
-          </ToggleGroup>
+            value={view}
+            options={[
+              { value: "world", label: "World map" },
+              { value: "age", label: "Age heatmap" },
+            ]}
+            onChange={(view) => update({ ...clearSelection, view })}
+          />
         </div>
-        {query.isPending && <HeatmapSkeleton view={view} />}
-        {query.isError && (
-          <Alert variant="destructive" className="mt-5">
-            <AlertDescription>
-              <p>{query.error.message}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void query.refetch()}
-              >
-                Retry heatmap
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+        <RequestError
+          key={selectParams(params, ["continent", "gender", "band"])}
+          message={query.error?.message}
+          retrying={query.isFetching}
+          onRetry={() => void query.refetch()}
+          fallback={query.isPending ? <HeatmapSkeleton view={view} /> : null}
+          retryLabel="Retry heatmap"
+          className="mt-5"
+        />
         {ready && (
           <>
             <section className="report-summary" aria-label="Heatmap summary">

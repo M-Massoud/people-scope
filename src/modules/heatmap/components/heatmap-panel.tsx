@@ -1,6 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import dynamic from "next/dynamic";
+import { SingleChoiceToggle } from "@/components/form-fields";
 import {
   Button,
   Card,
@@ -18,8 +19,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@/components/ui";
 import { heatmapOption, heatmapScale } from "../charts";
 import type {
@@ -75,31 +74,27 @@ export function HeatmapPanel({
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-3">
-            <ToggleGroup
-              aria-label="Heatmap values"
-              size="sm"
+            <SingleChoiceToggle
+              label="Heatmap values"
               spacing={1}
-              value={[metric]}
-              onValueChange={(values) => {
-                if (values.length) onUpdate({ metric: values[0] });
-              }}
-            >
-              <ToggleGroupItem value="share">Share %</ToggleGroupItem>
-              <ToggleGroupItem value="count">People</ToggleGroupItem>
-            </ToggleGroup>
-            <ToggleGroup
-              aria-label="Heatmap display"
-              variant="outline"
-              size="sm"
+              value={metric}
+              options={[
+                { value: "share", label: "Share %" },
+                { value: "count", label: "People" },
+              ]}
+              onChange={(metric) => onUpdate({ metric })}
+            />
+            <SingleChoiceToggle
+              label="Heatmap display"
               spacing={0}
-              value={[display]}
-              onValueChange={(values) => {
-                if (values.length) onUpdate({ display: values[0] });
-              }}
-            >
-              <ToggleGroupItem value="chart">Heatmap</ToggleGroupItem>
-              <ToggleGroupItem value="table">Data table</ToggleGroupItem>
-            </ToggleGroup>
+              value={display}
+              options={[
+                { value: "chart", label: "Heatmap" },
+                { value: "table", label: "Data table" },
+              ]}
+              onChange={(display) => onUpdate({ display })}
+              variant="outline"
+            />
           </div>
         </div>
       </CardHeader>

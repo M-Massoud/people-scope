@@ -37,13 +37,13 @@ export function buildCountryComparison(
       (person) => person.location.country === country,
     );
     const total = people.length;
-    const ages = ageBands.map(([min, max]) => {
+    const ages = ageBands.map(({ min, max, key, label }) => {
       const count = people.filter(
         (person) => person.dob.age >= min && person.dob.age <= max,
       ).length;
       return {
-        key: min === 75 ? "75+" : `${min}-${max}`,
-        label: min === 75 ? "75+" : `${min}–${max}`,
+        key,
+        label,
         count,
         percentage: total ? (count / total) * 100 : 0,
       };

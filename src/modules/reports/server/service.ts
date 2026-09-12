@@ -67,9 +67,9 @@ export function buildPeopleReport(
     params,
   );
   const timeline = makeTimeline(filters, grouping);
-  const ages: AgeRow[] = ageBands.map(([min, max]) => ({
-    key: min === 75 ? "75+" : `${min}-${max}`,
-    label: min === 75 ? "75+" : `${min}–${max}`,
+  const ages: AgeRow[] = ageBands.map(({ min, max, key, label }) => ({
+    key,
+    label,
     min,
     max,
     total: 0,

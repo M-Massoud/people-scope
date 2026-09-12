@@ -15,10 +15,10 @@ const matrixParams = (params: URLSearchParams) => {
   );
   const band = params.get("band");
   if (band && band !== "all") {
-    const range = ageBands.find(([min, max]) => `${min}-${max}` === band);
+    const range = ageBands.find(({ filterValue }) => filterValue === band);
     if (!range) throw new InvalidFiltersError("Choose a valid age group.");
-    filters.set("ageMin", String(range[0]));
-    filters.set("ageMax", String(range[1]));
+    filters.set("ageMin", String(range.min));
+    filters.set("ageMax", String(range.max));
   }
   return filters;
 };
@@ -28,9 +28,9 @@ export function buildHeatmap(
   params: URLSearchParams,
 ): HeatmapData {
   const { people, filters } = selectPeople(snapshot, matrixParams(params));
-  const ageGroups = ageBands.map(([min, max]) => ({
-    key: min === 75 ? "75+" : `${min}-${max}`,
-    label: min === 75 ? "75+" : `${min}–${max}`,
+  const ageGroups = ageBands.map(({ min, max, key, label }) => ({
+    key,
+    label,
     min,
     max,
   }));

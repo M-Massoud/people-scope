@@ -15,3 +15,13 @@ export function patchParams(
   }
   return next;
 }
+
+export function updateUrlParams(
+  patch: Record<string, string | null>,
+  replace = false,
+): void {
+  const url = new URL(window.location.href);
+  url.search = patchParams(url.searchParams, patch).toString();
+  // Next.js integrates native history with useSearchParams, without a route fetch.
+  window.history[replace ? "replaceState" : "pushState"](null, "", url);
+}

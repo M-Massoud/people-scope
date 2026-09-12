@@ -5,6 +5,7 @@ PeopleScope is one Next.js application organized into four feature modules. A mo
 ```text
 src/
 ├── app/                       Next.js pages, layout, and API routes
+│   └── api/_lib/responses.ts   Shared JSON headers and error status policy
 ├── config/                    Canonical page names, paths, and ID types
 ├── modules/
 │   ├── people/                Profiles and shared people rules
@@ -38,11 +39,13 @@ src/
 │       ├── charts/            World/matrix options, sorting, scales, public index
 │       └── server/            Country counts, mean ages, age cells, public index
 ├── components/
-│   ├── index.ts               Shell, summaries, fallbacks, QueryProvider exports
+│   ├── index.ts               Shell, summaries, fallbacks, feedback, QueryProvider
 │   ├── ui/                    shadcn primitives and public index
-│   ├── form-fields/           Shared labeled select and date picker
+│   ├── form-fields/           Labeled select, date picker, single-choice toggle
 │   ├── charts/                ECharts renderer, registration, shared colors
 │   ├── shell.tsx              Navigation and page frame
+│   ├── copy-view-link.tsx      Clipboard action and view-specific feedback
+│   ├── request-error.tsx       Error panel and retry feedback
 │   └── query-provider.tsx      Browser query cache
 └── lib/                       Generic HTTP, URL, class-name helpers, public index
 ```
@@ -63,12 +66,14 @@ export default function Page() {
 }
 ```
 
-API routes import the separate server entry point:
+API routes import the separate server entry point and API-local response helpers:
 
 ```ts
 import { getPeopleReport } from "@/modules/reports/server";
-import { InvalidFiltersError } from "@/modules/people/server";
+import { errorResponse, jsonResponse } from "../_lib/responses";
 ```
+
+`app/api/_lib/responses.ts` owns the shared `no-store` header and maps `InvalidFiltersError` to 400; other failures receive a safe 502 message. It stays under the API because recognizing that error depends on the people server module. Each route retains its GET, service call, and try/catch. The profile route also owns its explicit 404 and profile-specific fallback message.
 
 The report page uses the explorer through its component entry point:
 
@@ -100,6 +105,18 @@ import { ageGroupsOption, timelineOption } from "../charts";
 
 The shared chart index exports colors and types only. The renderer stays a direct dynamic import, so importing chart colors does not initialize ECharts. Next.js `page.tsx`, `layout.tsx`, and `route.ts` files retain their framework-required names; they consume module exports rather than having route-level indexes.
 
+The dashboard shares three small controls through the component indexes:
+
+| Component | Responsibility | Caller retains |
+| --------- | -------------- | -------------- |
+| `CopyViewLink` | Clipboard button and success/failure feedback associated with the supplied `viewKey`. | View identity and optional URL construction, including resolved comparison countries. |
+| `SingleChoiceToggle` | Controlled scalar selection over Base UI ToggleGroup; ignores empty or unknown values. | Options, current value, URL changes, and drilldown resets. Report date presets keep their separate ToggleGroup because custom dates allow no selection. |
+| `RequestError` | Error panel, optional heading/actions, and disabled retry button announcing “Retrying…”. | Request state, retry callback, reset actions, and whether previous data stays visible. |
+
+`RequestError` accepts an optional message. Keep it mounted and key it by request identity: it retains the last message only during a retry, then clears it when the request settles without an error. When no current or retained message is visible, it renders its optional `fallback`; callers supply their initial pending skeleton so revisiting a failed cached query still shows loading feedback. Query and geometry fetching remain in their feature hooks/components; the shared panel does not import TanStack Query.
+
+`PeopleExplorer` already shares search, sorting, pagination, and opening profile details across its consumers. Those controls remain in the people module, with `OptimizedPeopleTable` as the normal renderer and the original table retained for benchmarks.
+
 ## Follow one request
 
 ```text
@@ -128,6 +145,8 @@ The people endpoint reuses a sorted snapshot, applies the same filters, searches
 
 Types describe the JSON contracts. Zod validates the external profiles at runtime. The provider caches profiles on the server; React Query caches API responses in the browser. There is no database, repository abstraction, dependency injection container, or separate backend deployment.
 
+`people/constants.ts` defines readonly `ageBands` descriptors with `min`, `max`, `key`, `label`, and `filterValue`. Report, comparison, and heatmap services create their own counts from these descriptors; the heatmap selector uses their labels and filter values. The oldest band's API key and label are `75+`, while its URL filter is `75-120`. Each service projects its existing response fields, so descriptor metadata does not expand the JSON contract.
+
 ## Architectural decisions and tradeoffs
 
 | Decision                                                 | Reason                                                                                                              | Tradeoff                                                                                                              |
@@ -154,6 +173,8 @@ These choices serve a learning dashboard with a modest dataset. Add persistence,
 | HTTP            | Transport responses                                                              | Application APIs and the upstream fetch use `no-store`; this is separate from the explicit provider and browser caches.                                                 |
 
 The provider validates the complete seeded batch before caching it. Invalid query parameters produce HTTP 400. Provider failures produce HTTP 502 and a retryable UI state; the app does not replace failed live data with fixtures. A valid query with no matches is a successful empty response.
+
+`lib/url-params.ts` owns `updateUrlParams`, which patches the current URL while preserving unrelated parameters and its hash, then uses native history push or an explicitly requested replace. Feature callers retain their parameter/reset rules. Browser queries, including country comparison, use `readJson` for fetch/JSON/error handling while keeping their own parameter whitelist, query key, abort signal, and previous-data policy.
 
 Report filters narrow both aggregates and the people explorer. Comparison selectors define their own two complete country cohorts. On the heatmap, continent/gender/age-band filters change the aggregate; selecting a country or cell narrows the explorer while preserving the map or matrix context. See the [API contract](API.md) for exact parameter names.
 

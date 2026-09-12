@@ -7,7 +7,8 @@ import { MapChart } from "echarts/charts";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import EChart from "@/components/charts/echart";
 import type { EChartsType } from "@/components/charts";
-import { Alert, AlertDescription, Button, Skeleton } from "@/components/ui";
+import { Button, Skeleton } from "@/components/ui";
+import { RequestError } from "@/components";
 import { readJson } from "@/lib";
 import {
   WORLD_MAP,
@@ -68,25 +69,25 @@ export default function WorldChart({
       className="world-map-surface relative h-[320px] sm:h-[520px]"
       data-testid="world-map-panel"
     >
-      {geometry.isPending ? (
-        <Skeleton className="size-full" aria-label="Loading world boundaries" />
-      ) : geometry.isError ? (
-        <Alert variant="destructive">
-          <AlertDescription>
-            <p>
-              Unable to load the world map. Country values remain available in
-              the table.
-            </p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void geometry.refetch()}
-            >
-              Retry map
-            </Button>
-          </AlertDescription>
-        </Alert>
-      ) : (
+      <RequestError
+        message={
+          geometry.isError
+            ? "Unable to load the world map. Country values remain available in the table, where you can still explore people."
+            : null
+        }
+        retrying={geometry.isFetching}
+        onRetry={() => void geometry.refetch()}
+        fallback={
+          geometry.isPending ? (
+            <Skeleton
+              className="size-full"
+              aria-label="Loading world boundaries"
+            />
+          ) : null
+        }
+        retryLabel="Retry map"
+      />
+      {geometry.isSuccess && (
         <>
           <div className="heatmap-canvas h-full">
             <EChart

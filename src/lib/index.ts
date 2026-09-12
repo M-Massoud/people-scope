@@ -1,3 +1,3 @@
 export { cn } from "./utils";
 export { readJson } from "./http";
-export { patchParams, selectParams } from "./url-params";
+export { patchParams, selectParams, updateUrlParams } from "./url-params";

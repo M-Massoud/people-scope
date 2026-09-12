@@ -1,23 +1,16 @@
 "use client";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import dynamic from "next/dynamic";
-import {
-  X,
-  Link as LinkIcon,
-  Check,
-  Users,
-  Globe2,
-  CalendarDays,
-  SlidersHorizontal,
-  RotateCw,
-} from "lucide-react";
+import { X, Users, Globe2, CalendarDays } from "lucide-react";
 import { REPORT_PAGES } from "@/config";
-import { Shell, SummaryCard } from "@/components";
+import { CopyViewLink, RequestError, Shell, SummaryCard } from "@/components";
+import { SingleChoiceToggle } from "@/components/form-fields";
+import { selectParams } from "@/lib";
+import { REPORT_KEYS } from "../url-params";
 import { Filters } from "./filters";
 import {
   Alert,
   AlertDescription,
-  AlertTitle,
   Button,
   Card,
   CardContent,
@@ -29,8 +22,6 @@ import {
   EmptyHeader,
   EmptyTitle,
   Skeleton,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@/components/ui";
 import { ReportSkeleton } from "./report-skeleton";
 import { ReportDataTable } from "./report-data-table";
@@ -115,8 +106,6 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
   const ageDetail = largestAge?.total
     ? `Largest age band: ${largestAge.label}${data!.ages.filter((age) => age.total === largestAge.total).length > 1 ? " (tied)" : ""}`
     : "Across the selected profiles";
-  const [copiedUrl, setCopiedUrl] = useState("");
-  const [copyFailed, setCopyFailed] = useState(false);
   const geography =
     params.get("geography") === "country" ? "country" : "continent";
   const info =
@@ -285,40 +274,10 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
                 </Button>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground" role="status">
-                {copyFailed
-                  ? "Copy the address from your browser to share this view."
-                  : ""}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(window.location.href);
-                    setCopiedUrl(window.location.href);
-                    setCopyFailed(false);
-                  } catch {
-                    setCopyFailed(true);
-                  }
-                }}
-              >
-                {copiedUrl &&
-                copiedUrl.endsWith(
-                  `${window.location.pathname}${window.location.search}`,
-                ) ? (
-                  <Check data-icon="inline-start" />
-                ) : (
-                  <LinkIcon data-icon="inline-start" />
-                )}
-                Copy view link
-              </Button>
-            </div>
+            <CopyViewLink viewKey={`${kind}?${params.toString()}`} />
           </div>
         )}
-        {query.isPending && <ReportSkeleton />}
-        {query.isFetching && data && (
+        {query.isFetching && data && !query.isError && (
           <Alert role="status" className="my-4">
             <AlertDescription>
               Updating report. The figures still reflect the selection shown
@@ -326,30 +285,16 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
             </AlertDescription>
           </Alert>
         )}
-        {query.isError && (
-          <Alert className="my-6 flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:p-8">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary">
-              <SlidersHorizontal className="size-5" aria-hidden="true" />
-            </div>
-            <div className="flex min-w-0 flex-col gap-2">
-              <AlertTitle>
-                <h2>We couldn’t load this report</h2>
-              </AlertTitle>
-              <AlertDescription>{query.error.message}</AlertDescription>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <Button onClick={clear}>Reset to all data</Button>
-                <Button
-                  variant="outline"
-                  disabled={query.isFetching}
-                  onClick={() => void query.refetch()}
-                >
-                  <RotateCw data-icon="inline-start" />
-                  {query.isFetching ? "Retrying…" : "Try again"}
-                </Button>
-              </div>
-            </div>
-          </Alert>
-        )}
+        <RequestError
+          key={selectParams(params, REPORT_KEYS)}
+          message={query.error?.message}
+          retrying={query.isFetching}
+          onRetry={() => void query.refetch()}
+          fallback={query.isPending ? <ReportSkeleton /> : null}
+          title="We couldn’t load this report"
+          className="my-6"
+          actions={<Button onClick={clear}>Reset to all data</Button>}
+        />
         {data && option && (
           <>
             <section className="report-summary" aria-label="Report summary">
@@ -408,36 +353,28 @@ function ReportContent({ kind }: { kind: PeopleReportKind }) {
                       </CardDescription>
                     </div>
                     {kind === "profile-timeline" && (
-                      <ToggleGroup
-                        aria-label="Time grouping"
-                        size="sm"
+                      <SingleChoiceToggle
+                        label="Time grouping"
                         spacing={1}
-                        value={[data.grouping]}
-                        onValueChange={(values) => {
-                          if (values.length) update({ grouping: values[0] });
-                        }}
-                      >
-                        <ToggleGroupItem value="year">Yearly</ToggleGroupItem>
-                        <ToggleGroupItem value="month">Monthly</ToggleGroupItem>
-                      </ToggleGroup>
+                        value={data.grouping}
+                        options={[
+                          { value: "year", label: "Yearly" },
+                          { value: "month", label: "Monthly" },
+                        ]}
+                        onChange={(grouping) => update({ grouping })}
+                      />
                     )}
                     {kind === "geography" && (
-                      <ToggleGroup
-                        aria-label="Geographic grouping"
-                        size="sm"
+                      <SingleChoiceToggle
+                        label="Geographic grouping"
                         spacing={1}
-                        value={[geography]}
-                        onValueChange={(values) => {
-                          if (values.length) update({ geography: values[0] });
-                        }}
-                      >
-                        <ToggleGroupItem value="continent">
-                          Continents
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="country">
-                          Countries
-                        </ToggleGroupItem>
-                      </ToggleGroup>
+                        value={geography}
+                        options={[
+                          { value: "continent", label: "Continents" },
+                          { value: "country", label: "Countries" },
+                        ]}
+                        onChange={(geography) => update({ geography })}
+                      />
                     )}
                   </div>
                 </CardHeader>

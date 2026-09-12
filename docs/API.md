@@ -10,6 +10,8 @@
 
 All are read-only Next.js route handlers and use the same Random User provider. All return no-store responses; the provider has its own in-memory batch cache. Invalid input returns 400; provider failures return 502. No local dataset is substituted.
 
+The API-local `jsonResponse` and `errorResponse` helpers in `src/app/api/_lib/responses.ts` apply this policy across all five handlers. Validation errors preserve their message; other failures return a generic message without internal error details. The profile handler retains its own missing-profile 404 and profile-specific 502 message. Feature services continue to own validation and response data.
+
 ## Report and people parameters
 
 | Parameter          | Meaning                                                                                                               |
@@ -56,6 +58,8 @@ Opening the details Sheet calls `/api/people/[id]` for the full `Person`, includ
 The server lazily sorts the immutable snapshot once per requested sort order, then filters/searches that ordered collection and slices the requested page. There are at most six cached orders per snapshot; changing page or filters reuses the order, and a new provider snapshot gets fresh orders. Response field projection happens after pagination.
 
 Totals count matching records. Average age uses supplied ages and is null for an empty selection. Country count means distinct countries in that selection. Age buckets are 0–17, 18–24, 25–34, 35–44, 45–54, 55–64, 65–74, and 75+. Country rows contain positive counts, ordered by count descending, then name.
+
+These ranges come from the readonly `ageBands` descriptors in `src/modules/people/constants.ts`, shared by the three aggregation services and the heatmap selector. The oldest band's response key and label remain `75+`; the heatmap query uses `band=75-120`. Heatmap `ageGroups` still contain only `{ key, label, min, max }`; the descriptor's `filterValue` is not an added response field.
 
 ## Limitations
 

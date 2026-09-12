@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import { SingleChoiceToggle } from "@/components/form-fields";
 import { MapPin } from "lucide-react";
 import {
   Button,
@@ -17,8 +18,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  ToggleGroup,
-  ToggleGroupItem,
 } from "@/components/ui";
 import type { WorldMetric } from "../charts/world-options";
 import type { HeatmapRow } from "../types";
@@ -65,18 +64,16 @@ export function WorldPanel({
                 Select a country to explore its people.
               </CardDescription>
             </div>
-            <ToggleGroup
-              aria-label="Map color"
-              size="sm"
+            <SingleChoiceToggle
+              label="Map color"
               spacing={1}
-              value={[metric]}
-              onValueChange={(values) => {
-                if (values.length) onMetric(values[0]);
-              }}
-            >
-              <ToggleGroupItem value="count">User count</ToggleGroupItem>
-              <ToggleGroupItem value="age">Average age</ToggleGroupItem>
-            </ToggleGroup>
+              value={metric}
+              options={[
+                { value: "count", label: "User count" },
+                { value: "age", label: "Average age" },
+              ]}
+              onChange={onMetric}
+            />
           </div>
           {selected ? (
             <div className="mt-2">
