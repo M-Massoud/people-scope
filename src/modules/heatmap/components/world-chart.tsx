@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { registerMap, use } from "echarts/core";
+import { VisualMapComponent } from "echarts/components";
 import { MapChart } from "echarts/charts";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import EChart from "@/components/charts/echart";
@@ -16,7 +17,7 @@ import {
 import type { HeatmapRow } from "../types";
 
 // This module and the map renderer are loaded only when the world view is opened.
-use([MapChart]);
+use([MapChart, VisualMapComponent]);
 
 type Props = {
   rows: HeatmapRow[];

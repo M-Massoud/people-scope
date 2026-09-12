@@ -119,3 +119,7 @@ After separating the components, the comparison command was run with both implem
 | 6× slowdown |      8.10 s |               363 ms |            95.5% |
 
 The comparison summaries and per-component samples were saved locally in `docs/performance/paired/`, which is excluded from Git for JSON results. Run `npm run test:performance:table` to generate your own comparison; its exact output paths are printed in the terminal.
+
+## Comparing tables after the data optimizations
+
+Both table implementations now receive compact profile summaries. Full details load separately when a person is selected. Use the paired table benchmark to compare the regular and virtualized components within the same build; differences from older measurements can also reflect the smaller response and server sorting changes.

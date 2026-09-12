@@ -37,7 +37,11 @@ import {
 } from "@/components/ui";
 import { comparisonOption, comparisonScale } from "../charts";
 
-const EChart = dynamic(() => import("@/components/charts/echart"), {
+const BarChart = dynamic(() => import("@/components/charts/bar-chart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-full w-full" />,
+});
+const RadarChart = dynamic(() => import("@/components/charts/radar-chart"), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full" />,
 });
@@ -85,6 +89,7 @@ export function ComparisonPage() {
 function ComparisonContent() {
   const params = useSearchParams();
   const view = params.get("view") === "bar" ? "bar" : "radar";
+  const EChart = view === "bar" ? BarChart : RadarChart;
   const [copyMessage, setCopyMessage] = useState("");
   const query = useCountryComparison(params.toString());
   const data = query.data;

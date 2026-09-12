@@ -50,13 +50,21 @@ import {
 } from "../charts";
 import type { ChartSelection } from "@/components/charts";
 
-const EChart = dynamic(() => import("@/components/charts/echart"), {
-  ssr: false,
-  loading: () => (
+function ChartLoading() {
+  return (
     <div role="status" aria-label="Loading chart">
       <Skeleton className="h-[350px] w-full" />
     </div>
-  ),
+  );
+}
+
+const BarChart = dynamic(() => import("@/components/charts/bar-chart"), {
+  ssr: false,
+  loading: ChartLoading,
+});
+const PieChart = dynamic(() => import("@/components/charts/pie-chart"), {
+  ssr: false,
+  loading: ChartLoading,
 });
 const pages = {
   "profile-timeline": {
@@ -97,6 +105,7 @@ export function ReportPage({ kind }: { kind: PeopleReportKind }) {
   );
 }
 function ReportContent({ kind }: { kind: PeopleReportKind }) {
+  const EChart = kind === "geography" ? PieChart : BarChart;
   const { params, query, update, clear } = useReportView();
   const data = query.data;
   const largestAge = data?.ages.reduce(

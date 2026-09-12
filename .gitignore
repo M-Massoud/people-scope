@@ -11,5 +11,9 @@ test-results/
 .DS_Store
 dashboard-guide.html
 
+# Local study guides
+/docs/STUDY_GUIDE.md
+/docs/charts-guide.html
+
 # Local benchmark result snapshots
 /docs/performance/**/*.json

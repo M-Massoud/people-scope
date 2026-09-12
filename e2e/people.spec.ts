@@ -5,6 +5,18 @@ import { buildPeoplePage } from "@/modules/people/server";
 import { CHART_COLORS } from "@/components/charts";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("**/api/people/*", (route) => {
+    const id = new URL(route.request().url()).pathname.split("/").at(-1);
+    const person = peopleFixture.people.find(
+      (person) => person.login.uuid === id,
+    );
+    return route.fulfill(
+      person
+        ? { json: person }
+        : { status: 404, json: { error: "Profile not found." } },
+    );
+  });
+
   await page.route("https://randomuser.me/api/portraits/**", (route) =>
     route.abort(),
   );
@@ -750,4 +762,52 @@ test("sticky people headers stay above portraits and initials while scrolling", 
           .screenshot({ path: `/tmp/people-sticky-header-${width}.png` });
     }
   }
+});
+
+test("profile details load only on selection, show loading and retry, and reuse cached details", async ({
+  page,
+}) => {
+  let requests = 0;
+  let fail = true;
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/api/people/*", async (route) => {
+    requests++;
+    await pending;
+    const id = new URL(route.request().url()).pathname.split("/").at(-1);
+    const person = peopleFixture.people.find(
+      (person) => person.login.uuid === id,
+    )!;
+    await route.fulfill(
+      fail
+        ? { status: 502, json: { error: "Profile details unavailable." } }
+        : { json: person },
+    );
+  });
+  await page.goto("/profile-timeline?explore=1");
+  const first = page
+    .getByTestId("people-table")
+    .locator("tbody button")
+    .first();
+  await expect(first).toBeVisible();
+  expect(requests).toBe(0);
+  await first.click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("status", { name: "Loading profile details" }),
+  ).toBeVisible();
+  release();
+  await expect(
+    dialog.getByRole("button", { name: "Retry profile" }),
+  ).toBeVisible();
+  fail = false;
+  await dialog.getByRole("button", { name: "Retry profile" }).click();
+  await expect(dialog).toContainText("Date of birth");
+  const completedRequests = requests;
+  await page.keyboard.press("Escape");
+  await first.click();
+  await expect(dialog).toContainText("Date of birth");
+  expect(requests).toBe(completedRequests);
 });

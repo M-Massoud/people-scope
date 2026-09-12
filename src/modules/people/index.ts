@@ -1,5 +1,6 @@
 export type {
   Person,
+  PersonSummary,
   PeopleFilters,
   PeopleMeta,
   PeopleSnapshot,

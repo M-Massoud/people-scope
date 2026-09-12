@@ -3,7 +3,8 @@
 ## Our endpoints
 
 - `GET /api/reports`: filters, available period/countries, provenance, metrics, timeline rows, age/gender counts, country counts. No raw people collection.
-- `GET /api/people`: `items`, `total`, `page`, `pageSize`, `pageCount`.
+- `GET /api/people`: compact table `items`, `total`, `page`, `pageSize`, `pageCount`.
+- `GET /api/people/[id]`: one full `Person`, selected by `login.uuid`. Invalid UUIDs return 400 before fetching; a valid UUID absent from the current snapshot returns 404.
 - `GET /api/comparison`: `availableCountries`, `meta`, and two `groups`, each with `country`, `total`, and `ages` containing `key`, `label`, `count`, and `percentage`.
 - `GET /api/heatmap`: `meta`, applied `filters`, `totalPeople`, `ageGroups`, and country `rows` with `total`, `averageAge`, and age-ordered `cells` containing `count` and `percentage`.
 
@@ -48,7 +49,11 @@ The page's `view`, `color`, `metric=share|count`, `order=name|size|older`, and `
 
 ## Records
 
-`src/modules/people/types.ts` describes the selected API fields. The nested shapes are preserved: `name.first`, `location.country`, `dob.age`, `registered.date`, `login.uuid`, etc. Only UUID is retained from login; passwords and hashes are stripped during validation. People responses also include `picture.large`, `picture.thumbnail`, and provider `id.name` / `id.value`. ID values may be null or empty; they are display data, not the record key.
+`src/modules/people/types.ts` describes the selected API fields. The nested shapes are preserved: `name.first`, `location.country`, `dob.age`, `registered.date`, `login.uuid`, etc. Only UUID is retained from login; passwords and hashes are stripped during validation. The table endpoint returns `PersonSummary`: `login.uuid`, name, email, gender, city/country, age, profile date, and `picture.thumbnail`. It omits state, phone, nationality, date of birth, provider ID, and the large portrait URL. Search still checks state on the server.
+
+Opening the details Sheet calls `/api/people/[id]` for the full `Person`, including those omitted fields. React Query caches it by UUID; the Sheet shows a loading skeleton, errors, and a retry action. Full responses include `picture.large` and provider `id.name` / `id.value`. ID values may be null or empty; they are display data, not the record key.
+
+The server lazily sorts the immutable snapshot once per requested sort order, then filters/searches that ordered collection and slices the requested page. There are at most six cached orders per snapshot; changing page or filters reuses the order, and a new provider snapshot gets fresh orders. Response field projection happens after pagination.
 
 Totals count matching records. Average age uses supplied ages and is null for an empty selection. Country count means distinct countries in that selection. Age buckets are 0–17, 18–24, 25–34, 35–44, 45–54, 55–64, 65–74, and 75+. Country rows contain positive counts, ordered by count descending, then name.
 

@@ -12,6 +12,15 @@ export type Person = {
   picture: { large: string; thumbnail: string };
   id: { name: string; value: string | null };
 };
+// The table receives only visible fields. Full details are fetched on selection.
+export type PersonSummary = Pick<
+  Person,
+  "login" | "name" | "gender" | "email" | "registered"
+> & {
+  location: Pick<Person["location"], "city" | "country">;
+  dob: Pick<Person["dob"], "age">;
+  picture: Pick<Person["picture"], "thumbnail">;
+};
 export type PeopleFilters = {
   continent?: string;
   from: string;
@@ -29,7 +38,7 @@ export type PeopleMeta = {
 export type PeopleSnapshot = { people: Person[]; meta: PeopleMeta };
 export type CountryRow = { name: string; count: number };
 export type PeoplePage = {
-  items: Person[];
+  items: PersonSummary[];
   total: number;
   page: number;
   pageSize: number;

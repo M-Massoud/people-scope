@@ -1,17 +1,21 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
-import type { Person } from "../types";
+import type { Person, PersonSummary } from "../types";
 
 export function PersonAvatar({
   person,
   large = false,
 }: {
-  person: Person;
+  person: Person | PersonSummary;
   large?: boolean;
 }) {
   return (
     <Avatar className={large ? "size-20" : undefined} aria-hidden="true">
       <AvatarImage
-        src={large ? person.picture.large : person.picture.thumbnail}
+        src={
+          large && "large" in person.picture
+            ? person.picture.large
+            : person.picture.thumbnail
+        }
         alt=""
         loading="lazy"
       />

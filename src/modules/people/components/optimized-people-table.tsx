@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui";
-import type { Person } from "../types";
+import type { PersonSummary } from "../types";
 import { PersonAvatar } from "./person-avatar";
 
 const ROW_HEIGHT = 56;
@@ -43,9 +43,9 @@ export function OptimizedPeopleTable({
   busy,
   onSelect,
 }: {
-  items: Person[];
+  items: PersonSummary[];
   busy: boolean;
-  onSelect: (person: Person) => void;
+  onSelect: (person: PersonSummary) => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const table = useRef<HTMLTableElement>(null);

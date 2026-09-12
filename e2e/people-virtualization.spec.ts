@@ -13,6 +13,16 @@ const allPeople = buildPeoplePage(
 );
 
 test.beforeEach(async ({ page }) => {
+  await page.route("**/api/people/*", (route) => {
+    const id = new URL(route.request().url()).pathname.split("/").at(-1);
+    const person = snapshot.people.find((person) => person.login.uuid === id);
+    return route.fulfill(
+      person
+        ? { json: person }
+        : { status: 404, json: { error: "Profile not found." } },
+    );
+  });
+
   await page.route("https://randomuser.me/api/portraits/**", (route) =>
     route.abort(),
   );

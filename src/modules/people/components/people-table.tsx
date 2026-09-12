@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui";
-import type { Person } from "../types";
+import type { PersonSummary } from "../types";
 import { PersonAvatar } from "./person-avatar";
 
 // Original rendering approach: every requested record has a real table row.
@@ -23,9 +23,9 @@ export function PeopleTable({
   busy,
   onSelect,
 }: {
-  items: Person[];
+  items: PersonSummary[];
   busy: boolean;
-  onSelect: (person: Person) => void;
+  onSelect: (person: PersonSummary) => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {

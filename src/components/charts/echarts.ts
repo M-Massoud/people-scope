@@ -1,9 +1,5 @@
 import { init, use, type EChartsType, type ComposeOption } from "echarts/core";
 import {
-  BarChart,
-  PieChart,
-  RadarChart,
-  HeatmapChart,
   type MapSeriesOption,
   type BarSeriesOption,
   type PieSeriesOption,
@@ -12,12 +8,9 @@ import {
 } from "echarts/charts";
 import {
   DatasetComponent,
-  GridComponent,
   TooltipComponent,
   LegendComponent,
   AriaComponent,
-  RadarComponent,
-  VisualMapComponent,
   type DatasetComponentOption,
   type GridComponentOption,
   type TooltipComponentOption,
@@ -30,14 +23,7 @@ import { CanvasRenderer } from "echarts/renderers";
 
 // Tree-shakable entry point: registering a chart type and its renderer is explicit.
 use([
-  BarChart,
-  PieChart,
-  RadarChart,
-  HeatmapChart,
-  RadarComponent,
-  VisualMapComponent,
   DatasetComponent,
-  GridComponent,
   TooltipComponent,
   LegendComponent,
   AriaComponent,

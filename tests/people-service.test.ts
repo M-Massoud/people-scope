@@ -186,6 +186,59 @@ describe("people reports", () => {
 });
 
 describe("people explorer", () => {
+  it("sends table fields without profile-only data", () => {
+    const person = buildPeoplePage(snapshot, params()).items[0];
+    expect(person).toEqual({
+      login: snapshot.people[2].login,
+      name: snapshot.people[2].name,
+      email: snapshot.people[2].email,
+      gender: snapshot.people[2].gender,
+      location: { city: "Quebec", country: "Canada" },
+      dob: { age: 24 },
+      registered: snapshot.people[2].registered,
+      picture: { thumbnail: snapshot.people[2].picture.thumbnail },
+    });
+  });
+
+  it("keeps pagination consistent across filters and refreshes without mutating the snapshot", () => {
+    const originalOrder = peopleFixture.people.map(
+      (person) => person.login.uuid,
+    );
+    const first = buildPeoplePage(
+      peopleFixture,
+      params("sort=name_asc&pageSize=10"),
+    );
+    const second = buildPeoplePage(
+      peopleFixture,
+      params("sort=name_asc&pageSize=10&page=2"),
+    );
+    expect(
+      new Set(
+        [...first.items, ...second.items].map((person) => person.login.uuid),
+      ).size,
+    ).toBe(20);
+    const filtered = buildPeoplePage(
+      peopleFixture,
+      params("sort=name_asc&country=France"),
+    );
+    expect(filtered.total).toBe(12);
+    expect(
+      filtered.items.every((person) => person.location.country === "France"),
+    ).toBe(true);
+    const refreshed = {
+      ...peopleFixture,
+      people: [fixturePerson(100, { name: { first: "A", last: "New" } })],
+    };
+    expect(
+      buildPeoplePage(refreshed, params("sort=name_asc")).items.map(
+        (person) => person.name.first,
+      ),
+    ).toEqual(["A"]);
+    expect(peopleFixture.people.map((person) => person.login.uuid)).toEqual(
+      originalOrder,
+    );
+  });
+
   it("returns direct person fields newest first with UUIDs breaking equal registration ties", () => {
     expect(
       buildPeoplePage(snapshot, params()).items.map(

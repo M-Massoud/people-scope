@@ -20,15 +20,11 @@ import {
   FieldGroup,
   FieldLabel,
   Input,
-  ScrollArea,
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui";
 import { LabeledSelect } from "@/components/form-fields";
-import type { Person } from "../types";
+import type { PersonSummary } from "../types";
 import { DEFAULT_TABLE_PAGE_SIZE, TABLE_PAGE_SIZES } from "@/config";
 import {
   usePeoplePage,
@@ -38,7 +34,7 @@ import {
 import { PeopleTableSkeleton } from "./people-table-skeleton";
 import { OptimizedPeopleTable } from "./optimized-people-table";
 import { PeopleTable } from "./people-table";
-import { PersonAvatar } from "./person-avatar";
+import { PersonDetails } from "./person-details";
 
 type Update = (patch: Record<string, string | null>, replace?: boolean) => void;
 function PeopleSearch({
@@ -96,7 +92,7 @@ export function PeopleExplorer({
     ready: query.isSuccess && !query.isFetching && !query.isPlaceholderData,
     failed: query.isError,
   });
-  const [selected, setSelected] = useState<Person | null>(null);
+  const [selected, setSelected] = useState<PersonSummary | null>(null);
   const section = useRef<HTMLDivElement>(null);
   const clearSearch = () => {
     update({ search: null, page: null });
@@ -225,67 +221,12 @@ export function PeopleExplorer({
                     />
                   )}
                   <SheetContent>
-                    <SheetHeader>
-                      {selected && (
-                        <PersonAvatar
-                          key={selected.login.uuid}
-                          person={selected}
-                          large
-                        />
-                      )}
-                      <SheetTitle>
-                        {selected
-                          ? `${selected.name.first} ${selected.name.last}`
-                          : "Person details"}
-                      </SheetTitle>
-                      <SheetDescription>
-                        Contact information and profile details.
-                      </SheetDescription>
-                    </SheetHeader>
-                    <ScrollArea
-                      className="min-h-0 flex-1"
-                      role="region"
-                      aria-label="Profile details"
-                    >
-                      {selected && (
-                        <div className="px-4 pb-6">
-                          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            {Object.entries({
-                              Email: selected.email,
-                              Phone: selected.phone,
-                              Country: selected.location.country,
-                              State: selected.location.state,
-                              City: selected.location.city,
-                              Nationality: selected.nat,
-                              "Provider ID": selected.id.value?.trim()
-                                ? `${selected.id.name || "ID"} · ${selected.id.value}`
-                                : "Not provided",
-                              Gender: selected.gender,
-                              Age: selected.dob.age,
-                              "Date of birth": selected.dob.date.slice(0, 10),
-                              "Profile date (UTC)":
-                                selected.registered.date.slice(0, 10),
-                            }).map(([label, value]) => (
-                              <div
-                                key={label}
-                                className={
-                                  label === "Email"
-                                    ? "min-w-0 sm:col-span-2"
-                                    : "min-w-0"
-                                }
-                              >
-                                <dt className="text-xs text-muted-foreground">
-                                  {label}
-                                </dt>
-                                <dd className="mt-1 break-words text-sm">
-                                  {value}
-                                </dd>
-                              </div>
-                            ))}
-                          </dl>
-                        </div>
-                      )}
-                    </ScrollArea>
+                    {selected && (
+                      <PersonDetails
+                        key={selected.login.uuid}
+                        selected={selected}
+                      />
+                    )}
                   </SheetContent>
                 </Sheet>
                 {data.total === 0 && (

@@ -50,6 +50,7 @@ Keep route paths, report identifiers, navigation labels, and page titles consist
 - Keep upstream settings in `RANDOM_USER_CONFIG` in the people provider. Do not change the fixed seed as part of a brand or visual update.
 - Validate external data at runtime and retain only the fields needed by the application. Never forward passwords or login hashes.
 - Production requests use Random User; fixtures belong under `tests/fixtures`. Do not silently substitute local data when the provider fails.
+- Treat provider snapshots as immutable; the bounded sort indexes are keyed by snapshot identity. Keep table summaries small and fetch full details by UUID only when needed.
 - Preserve the shared in-flight request and process-local cache. Browser query caching is separate; API responses use `no-store`.
 - Keep shareable filters and view selections in the URL. Query keys should include only parameters that change the requested data.
 - Preserve refresh, Back, filter drafts, and chart-to-people drilldown behavior. Scroll to the explorer only after an explicit user action.

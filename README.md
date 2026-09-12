@@ -46,7 +46,7 @@ Browser → our Next.js API → Random User (or five-minute cache)
 Browser ← chart summaries or one page of people
 ```
 
-`/api/reports` returns chart aggregates. `/api/people` returns 25 records by default. `/api/comparison` returns two countries' age-group counts and percentages. `/api/heatmap` returns country counts, average ages, and the country/age matrix. All use the same validated batch, with concurrent upstream requests shared. The browser never needs all 5,000 records to render a chart.
+`/api/reports` returns chart aggregates. `/api/people` returns 25 compact table records by default; `/api/people/[id]` returns the full profile when its details are opened. `/api/comparison` returns two countries' age-group counts and percentages. `/api/heatmap` returns country counts, average ages, and the country/age matrix. All use the same validated batch, with concurrent upstream requests shared. The browser never needs all 5,000 records to render a chart.
 
 Provider settings live together in `RANDOM_USER_CONFIG` at the top of [provider.ts](src/modules/people/server/provider.ts). The [data-source guide](docs/RANDOMUSER.md) explains the seed, requested versus retained fields, both caches, and provider limits.
 
@@ -81,6 +81,8 @@ Contributor workflow lives in [CONTRIBUTING.md](CONTRIBUTING.md). Coding-assista
 Each module exposes named exports through `index.ts`. Server functions have a separate `server/index.ts`; browser code never imports those entry points. Shared shadcn UI, form fields, the app shell, and the lazy-loaded ECharts renderer stay under `src/components`. Generic HTTP and URL helpers stay under `src/lib`.
 
 ## Read the code
+
+New to charts? Open [Charts, finally explained](docs/charts-guide.html) for interactive bar, doughnut, radar, matrix, and world-map lessons with small code examples. The standalone HTML guide works offline.
 
 Start with the [interactive dashboard guide](docs/dashboard-guide.html) for a beginner-friendly explanation of the architecture, data flow, caching, chart calculations, and technical review questions. Open the HTML file in a browser; the diagrams work offline, and the source links work when it stays in this repository.
 

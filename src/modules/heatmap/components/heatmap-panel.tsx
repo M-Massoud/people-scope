@@ -29,7 +29,7 @@ import type {
   HeatmapSelection,
 } from "../types";
 
-const EChart = dynamic(() => import("@/components/charts/echart"), {
+const EChart = dynamic(() => import("@/components/charts/heatmap-chart"), {
   ssr: false,
   loading: () => <Skeleton className="size-full" />,
 });

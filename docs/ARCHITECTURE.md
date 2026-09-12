@@ -115,7 +115,7 @@ Apply country=Canada
   → report components display the results
 ```
 
-The people endpoint applies the same filters, then searches, sorts, and paginates. The comparison endpoint uses the same profile snapshot and calculates each country's age percentages against that country's total.
+The people endpoint reuses a sorted snapshot, applies the same filters, searches, paginates, and projects only table fields. Opening the details Sheet fetches one full profile from `/api/people/[id]`. The comparison endpoint uses the same profile snapshot and calculates each country's age percentages against that country's total.
 
 ## What belongs where
 
@@ -192,3 +192,11 @@ The explorer owns its scrolling and sticky-header behavior. Its ScrollArea creat
 The shared `OptimizedPeopleTable` component owns row rendering and its shadcn ScrollArea viewport. It uses `@tanstack/react-virtual` for pages above 100 records, with fixed-height rows, spacer rows, and six-row overscan. Smaller pages render normally. UUID keys, logical ARIA row indexes, keyboard navigation, and retaining the focused trigger preserve record identity and profile-dialog focus. Fetching, filtering, sorting, and pagination remain in the existing hooks and server service. See [performance measurements](PERFORMANCE.md) for the controlled before/after workload.
 
 `PeopleTable` retains the original full-row rendering as a readable benchmark comparison. Both components share the `items`, `busy`, and `onSelect` prop contract. `PeopleExplorer` defaults to `OptimizedPeopleTable`; only the automated benchmark selects the regular version through its internal mode. The same benchmark measures both implementations with identical data and timing checkpoints.
+
+## Performance boundaries
+
+- **Chart code:** `components/charts/echarts.ts` registers shared canvas, dataset, tooltip, legend, and accessibility support. Small `bar-chart`, `pie-chart`, `radar-chart`, and `heatmap-chart` modules register their own series/components and reuse `echart.tsx`. Pages dynamically import the renderer they display. The world renderer separately registers map and visual-map support. Type-only imports do not load chart implementations. Keep renderer modules out of public barrels.
+- **Sorting:** `people/server/service.ts` stores at most six sorted arrays per provider snapshot in a WeakMap. Arrays copy references, not entire people. Snapshots must be treated as immutable. A replacement snapshot is a new key; old entries can be garbage-collected. Each first use sorts the full 5,000 profiles, even with a narrow filter, trading initial work and a little memory for reuse across pages and filters. A shared Intl.Collator avoids constructing locale comparison options on every name comparison. Filters and searches still run per request; this is not a cache of arbitrary URL combinations.
+- **List versus details:** `PersonSummary` describes exactly what table rows display. `Person` remains the complete validated profile. `toPersonSummary` selects fields after pagination; it does not invent data. `PersonDetails` and `usePerson` own the on-demand detail request, loading/retry UI, and UUID-specific browser cache. Details are served from the same provider snapshot cache, not a separate upstream request per person. A profile missing after refresh yields a clear 404.
+
+These boundaries leave table virtualization, shareable URLs, chart selections, and the provider validation rules intact. See `docs/PERFORMANCE.md` for the table benchmark and its limitations.

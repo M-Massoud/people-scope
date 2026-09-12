@@ -56,7 +56,7 @@ To retain an additional field, update the requested groups if necessary, the Zod
 
 The complete batch must contain the configured number of valid profiles, unique UUIDs, and matching seed/page/version metadata. A partial or malformed batch is rejected so charts do not silently describe a different sample.
 
-## Two independent caches
+## Data caches and derived sort indexes
 
 | Layer                 | Stores                              | Lifetime and purpose                                                                     |
 | --------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -77,9 +77,15 @@ The server caches profiles, not every possible filtered aggregate. Endpoints fil
 
 `cache: "no-store"` bypasses Next.js's fetch cache. It does not disable this application-owned in-memory cache.
 
+### Sorted profile indexes
+
+The people service also retains up to six sorted arrays for each immutable snapshot, using a WeakMap keyed by snapshot identity. Subsequent pages and filters reuse the requested order. A refreshed snapshot gets new indexes automatically; old indexes can be garbage-collected. These arrays reference the original profiles and do not duplicate complete records. There is no unbounded cache of search strings or filter combinations.
+
 ### Browser cache
 
 React Query identifies a response with a key such as `["reports", "country=Canada"]`. Germany has a different key. Only parameters affecting that endpoint's data belong in its key; display-only choices can reuse the existing response.
+
+Full detail responses have their own `["person", uuid]` query key and are requested only while a selected profile is open. Table queries return a smaller `PersonSummary`; provider validation still retains the full `Person` on the server.
 
 The defaults are `staleTime: 60_000`, `gcTime: 5 * 60_000`, `retry: 1`, and `refetchOnWindowFocus: false`. Stale time is a freshness window, not a polling interval. `keepPreviousData` keeps the previous result visible while a new filter or page request loads. Browser fetches receive React Query's abort signal; the shared upstream fetch has its own timeout.
 
