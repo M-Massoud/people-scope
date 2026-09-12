@@ -10,7 +10,11 @@ import {
   TableRow,
 } from "@/components/ui";
 
-export function PeopleTableSkeleton() {
+export function PeopleTableSkeleton({
+  tableOnly = false,
+}: {
+  tableOnly?: boolean;
+}) {
   return (
     <div
       role="status"
@@ -19,13 +23,15 @@ export function PeopleTableSkeleton() {
       className="flex flex-col gap-4"
     >
       <span className="sr-only">Loading people…</span>
-      <div
-        aria-hidden="true"
-        className="flex items-center justify-between gap-3"
-      >
-        <Skeleton className="h-5 w-28" />
-        <Skeleton className="h-4 w-20" />
-      </div>
+      {!tableOnly && (
+        <div
+          aria-hidden="true"
+          className="flex items-center justify-between gap-3"
+        >
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      )}
       <ScrollArea
         aria-hidden="true"
         inert
@@ -79,20 +85,22 @@ export function PeopleTableSkeleton() {
         </Table>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-      <div
-        aria-hidden="true"
-        className="flex flex-wrap items-end justify-between gap-3"
-      >
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-8 w-32" />
+      {!tableOnly && (
+        <div
+          aria-hidden="true"
+          className="flex flex-wrap items-end justify-between gap-3"
+        >
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-32" />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-7 w-20" />
+            <Skeleton className="h-7 w-10" />
+            <Skeleton className="h-7 w-16" />
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Skeleton className="h-7 w-20" />
-          <Skeleton className="h-7 w-10" />
-          <Skeleton className="h-7 w-16" />
-        </div>
-      </div>
+      )}
     </div>
   );
 }

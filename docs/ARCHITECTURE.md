@@ -228,6 +228,8 @@ The shared `OptimizedPeopleTable` component owns row rendering and its shadcn Sc
 
 `PeopleTable` retains the original full-row rendering as a readable benchmark comparison. Both components share the `items`, `busy`, and `onSelect` prop contract. `PeopleExplorer` defaults to `OptimizedPeopleTable`; only the automated benchmark selects the regular version through its internal mode. The same benchmark measures both implementations with identical data and timing checkpoints.
 
+Both table implementations are direct `next/dynamic` imports in `PeopleExplorer` and stay out of the public component barrel. The selected renderer's code loads only when the explorer is open and has nonempty results. While its JavaScript loads, `PeopleTableSkeleton` renders only the table placeholder because the result count and pagination are already available. Initial data loading still uses the full skeleton. This defers table code separately from the existing on-demand data query; it does not change pagination, the virtualization threshold, or query caching. The first nonempty result can incur an additional code request; no measured speed improvement is implied.
+
 ## Performance boundaries
 
 - **Chart code:** `components/charts/echarts.ts` registers shared canvas, dataset, tooltip, legend, and accessibility support. Small `bar-chart`, `pie-chart`, `radar-chart`, and `heatmap-chart` modules register their own series/components and reuse `echart.tsx`. Pages dynamically import the renderer they display. The world renderer separately registers map and visual-map support. Type-only imports do not load chart implementations. Keep renderer modules out of public barrels.

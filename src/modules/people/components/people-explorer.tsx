@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Search, SearchX } from "lucide-react";
 import {
@@ -32,9 +33,18 @@ import {
   getTableBenchmarkMode,
 } from "../hooks";
 import { PeopleTableSkeleton } from "./people-table-skeleton";
-import { OptimizedPeopleTable } from "./optimized-people-table";
-import { PeopleTable } from "./people-table";
 import { PersonDetails } from "./person-details";
+
+// Keep each renderer behind its own import; only the selected table is loaded.
+const OptimizedPeopleTable = dynamic(
+  () =>
+    import("./optimized-people-table").then((mod) => mod.OptimizedPeopleTable),
+  { loading: () => <PeopleTableSkeleton tableOnly /> },
+);
+const PeopleTable = dynamic(
+  () => import("./people-table").then((mod) => mod.PeopleTable),
+  { loading: () => <PeopleTableSkeleton tableOnly /> },
+);
 
 type Update = (patch: Record<string, string | null>, replace?: boolean) => void;
 function PeopleSearch({
