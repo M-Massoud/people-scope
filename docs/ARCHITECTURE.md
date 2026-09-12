@@ -44,6 +44,8 @@ src/
 │   ├── form-fields/           Labeled select, date picker, single-choice toggle
 │   ├── charts/                ECharts renderer, registration, shared colors
 │   ├── shell.tsx              Navigation and page frame
+│   ├── navigation-link.tsx    Native Next.js links with pending feedback
+│   ├── page-loading.tsx       Shared route loading screen
 │   ├── copy-view-link.tsx      Clipboard action and view-specific feedback
 │   ├── request-error.tsx       Error panel and retry feedback
 │   └── query-provider.tsx      Browser query cache
@@ -107,11 +109,11 @@ The shared chart index exports colors and types only. The renderer stays a direc
 
 The dashboard shares three small controls through the component indexes:
 
-| Component | Responsibility | Caller retains |
-| --------- | -------------- | -------------- |
-| `CopyViewLink` | Clipboard button and success/failure feedback associated with the supplied `viewKey`. | View identity and optional URL construction, including resolved comparison countries. |
-| `SingleChoiceToggle` | Controlled scalar selection over Base UI ToggleGroup; ignores empty or unknown values. | Options, current value, URL changes, and drilldown resets. Report date presets keep their separate ToggleGroup because custom dates allow no selection. |
-| `RequestError` | Error panel, optional heading/actions, and disabled retry button announcing “Retrying…”. | Request state, retry callback, reset actions, and whether previous data stays visible. |
+| Component            | Responsibility                                                                           | Caller retains                                                                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CopyViewLink`       | Clipboard button and success/failure feedback associated with the supplied `viewKey`.    | View identity and optional URL construction, including resolved comparison countries.                                                                   |
+| `SingleChoiceToggle` | Controlled scalar selection over Base UI ToggleGroup; ignores empty or unknown values.   | Options, current value, URL changes, and drilldown resets. Report date presets keep their separate ToggleGroup because custom dates allow no selection. |
+| `RequestError`       | Error panel, optional heading/actions, and disabled retry button announcing “Retrying…”. | Request state, retry callback, reset actions, and whether previous data stays visible.                                                                  |
 
 `RequestError` accepts an optional message. Keep it mounted and key it by request identity: it retains the last message only during a retry, then clears it when the request settles without an error. When no current or retained message is visible, it renders its optional `fallback`; callers supply their initial pending skeleton so revisiting a failed cached query still shows loading feedback. Query and geometry fetching remain in their feature hooks/components; the shared panel does not import TanStack Query.
 
@@ -177,6 +179,18 @@ The provider validates the complete seeded batch before caching it. Invalid quer
 `lib/url-params.ts` owns `updateUrlParams`, which patches the current URL while preserving unrelated parameters and its hash, then uses native history push or an explicitly requested replace. Feature callers retain their parameter/reset rules. Browser queries, including country comparison, use `readJson` for fetch/JSON/error handling while keeping their own parameter whitelist, query key, abort signal, and previous-data policy.
 
 Report filters narrow both aggregates and the people explorer. Comparison selectors define their own two complete country cohorts. On the heatmap, continent/gender/age-band filters change the aggregate; selecting a country or cell narrows the explorer while preserving the map or matrix context. See the [API contract](API.md) for exact parameter names.
+
+## Navigation before data
+
+Navigation has three separate phases:
+
+1. **Route transition:** `NavigationLink` keeps Next.js Link prefetching and native keyboard/modifier behavior. Its `useLinkStatus` child shows a thin indicator while a clicked route is pending. A live status announces the destination separately from the link's accessible name. The indicator occupies no layout space, fades in after 100 ms to avoid flashes on fast transitions, and respects reduced motion.
+2. **Page code loading:** Each canonical route has a `loading.tsx` boundary that renders shared `PageLoading`. It shows the destination title, navigation, and skeleton panels while the destination module loads. This fallback skips heading/card entrance animations so loading feedback is visible immediately; skeletons keep their normal pulse. Its small query-aware child preserves report-filter links; a local Suspense fallback can render without query state during prerendering. It imports no feature modules or chart renderers.
+3. **Data and charts:** Once the destination component mounts, its existing TanStack Query hook fetches or reuses the required response. The feature's skeleton/error states take over; chart code and world geometry load independently. Navigation remains available while these requests are pending.
+
+Pages do not wait for Random User in a server component. The four reports already share their aggregate query cache. There is no extra hover-data prefetch layer: standard production route prefetching and existing query caching remain responsible for reuse. Route loading and request loading replace one another; the shell is not nested inside another shell.
+
+An uncached route still needs its loading code or route response to arrive; a loading boundary cannot eliminate network latency. Pending feedback covers that interval. Development compilation and disabled automatic production prefetching also make `next dev` an unsuitable production speed measurement.
 
 ## Extending a feature
 

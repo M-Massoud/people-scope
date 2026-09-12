@@ -1,5 +1,6 @@
 import { PAGES, type PageId } from "@/config";
 import Link from "next/link";
+import { NavigationLink } from "./navigation-link";
 import { ScrollArea, ScrollBar } from "./ui";
 import {
   Users,
@@ -51,8 +52,9 @@ export function Shell({
           <ScrollArea>
             <nav aria-label="Main navigation">
               {pages.map((page) => (
-                <Link
+                <NavigationLink
                   key={page.id}
+                  label={page.title}
                   href={
                     page.href +
                     (queryString &&
@@ -65,7 +67,7 @@ export function Shell({
                 >
                   <page.icon size={16} aria-hidden="true" />
                   {page.title}
-                </Link>
+                </NavigationLink>
               ))}
             </nav>
             <ScrollBar
