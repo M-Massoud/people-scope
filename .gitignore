@@ -14,6 +14,7 @@ dashboard-guide.html
 # Local study guides
 /docs/STUDY_GUIDE.md
 /docs/charts-guide.html
+/docs/project-explainer/
 
 # Local benchmark result snapshots
 /docs/performance/**/*.json

@@ -82,6 +82,8 @@ Each module exposes named exports through `index.ts`. Server functions have a se
 
 ## Read the code
 
+Open the [PeopleScope developer’s field guide](docs/project-explainer/index.html) for a complete offline learning path: architecture diagrams, a repository map, four request traces, source walkthroughs, debugging guidance, and 48 CTO practice questions. [Usage and verification](docs/project-explainer/README.md) · [Detailed repository analysis](docs/project-explainer/repository-analysis.md) · [Meeting cheat sheet](docs/project-explainer/cto-cheat-sheet.md).
+
 New to charts? Open [Charts, finally explained](docs/charts-guide.html) for interactive bar, doughnut, radar, matrix, and world-map lessons with small code examples. The standalone HTML guide works offline.
 
 Start with the [interactive dashboard guide](docs/dashboard-guide.html) for a beginner-friendly explanation of the architecture, data flow, caching, chart calculations, and technical review questions. Open the HTML file in a browser; the diagrams work offline, and the source links work when it stays in this repository.
